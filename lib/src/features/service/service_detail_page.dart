@@ -67,16 +67,13 @@ class _ServiceDetailContent extends ConsumerWidget {
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                color: oc.border,
-                child: Center(
-                  child: Image.asset(
-                    'assets/images/logo_outalma.png',
-                    height: 100,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
+              background: service.photos.isNotEmpty
+                  ? Image.network(
+                      service.photos.first,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _heroFallback(oc),
+                    )
+                  : _heroFallback(oc),
             ),
           ),
 
@@ -153,6 +150,19 @@ class _ServiceDetailContent extends ConsumerWidget {
 
       // ---- Sticky bottom bar ----
       bottomNavigationBar: _BookingBottomBar(service: service),
+    );
+  }
+
+  Widget _heroFallback(dynamic oc) {
+    return Container(
+      color: oc.border,
+      child: Center(
+        child: Image.asset(
+          'assets/images/logo_outalma.png',
+          height: 100,
+          fit: BoxFit.contain,
+        ),
+      ),
     );
   }
 }

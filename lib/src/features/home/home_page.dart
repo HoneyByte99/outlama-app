@@ -242,20 +242,21 @@ class _ServiceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Photo placeholder
+            // Photo area
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
-              child: Container(
+              child: SizedBox(
                 height: 110,
                 width: double.infinity,
-                color: oc.primary.withValues(alpha: 0.06),
-                child: Icon(
-                  _categoryIcon(service.categoryId),
-                  size: 36,
-                  color: oc.primary.withValues(alpha: 0.4),
-                ),
+                child: service.photos.isNotEmpty
+                    ? Image.network(
+                        service.photos.first,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _iconPlaceholder(oc),
+                      )
+                    : _iconPlaceholder(oc),
               ),
             ),
             Padding(
@@ -299,6 +300,17 @@ class _ServiceCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _iconPlaceholder(dynamic oc) {
+    return Container(
+      color: oc.primary.withValues(alpha: 0.06),
+      child: Icon(
+        _categoryIcon(service.categoryId),
+        size: 36,
+        color: oc.primary.withValues(alpha: 0.4),
       ),
     );
   }

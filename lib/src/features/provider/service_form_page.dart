@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import '../../app/app_theme.dart';
 import '../../application/auth/auth_providers.dart';
 import '../../application/auth/auth_state.dart';
 import '../../application/service/service_providers.dart';
+import '../../data/services/service_photo_upload_service.dart';
 import '../../domain/enums/category_id.dart';
 import '../../domain/enums/price_type.dart';
 import '../../domain/models/service.dart';
@@ -30,6 +32,9 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
   late CategoryId _category;
   late PriceType _priceType;
   late bool _published;
+  List<String> _photos = [];
+  bool _uploadingPhoto = false;
+  late final String _pendingServiceId;
   bool _saving = false;
 
   bool get _isEdit => widget.existing != null;
@@ -48,6 +53,10 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
     _category = s?.categoryId ?? CategoryId.menage;
     _priceType = s?.priceType ?? PriceType.hourly;
     _published = s?.published ?? false;
+    _photos = List<String>.from(s?.photos ?? []);
+    _pendingServiceId = _isEdit
+        ? widget.existing!.id
+        : FirebaseFirestore.instance.collection('services').doc().id;
   }
 
   @override
@@ -57,6 +66,32 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
     _priceController.dispose();
     _zoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickPhoto() async {
+    final uploader = ref.read(servicePhotoUploadServiceProvider);
+    setState(() => _uploadingPhoto = true);
+    try {
+      final url = await uploader.pickAndUpload(_pendingServiceId);
+      if (url != null && mounted) {
+        setState(() => _photos = [url]);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Impossible d\'importer la photo. Réessayez.'),
+            backgroundColor: context.oc.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
+  }
+
+  void _removePhoto() {
+    setState(() => _photos = []);
   }
 
   Future<void> _save() async {
@@ -82,6 +117,7 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
           serviceArea: _zoneController.text.trim().isEmpty
               ? null
               : _zoneController.text.trim(),
+          photos: _photos,
           published: _published,
           updatedAt: DateTime.now(),
         );
@@ -89,14 +125,14 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
       } else {
         final now = DateTime.now();
         final service = Service(
-          id: '',
+          id: _pendingServiceId,
           providerId: authState.user.id,
           categoryId: _category,
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim().isEmpty
               ? null
               : _descriptionController.text.trim(),
-          photos: const [],
+          photos: _photos,
           priceType: _priceType,
           price: priceEuros * 100,
           published: _published,
@@ -157,6 +193,15 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
+              // Photo upload
+              _PhotoSection(
+                photos: _photos,
+                uploading: _uploadingPhoto,
+                onPick: _pickPhoto,
+                onRemove: _removePhoto,
+              ),
+              const SizedBox(height: 20),
+
               // Title
               const _Label('Titre du service'),
               TextFormField(
@@ -283,6 +328,120 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
               const SizedBox(height: 32),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Photo section
+// ---------------------------------------------------------------------------
+
+class _PhotoSection extends StatelessWidget {
+  const _PhotoSection({
+    required this.photos,
+    required this.uploading,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final List<String> photos;
+  final bool uploading;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final oc = context.oc;
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: _buildContent(context, oc),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, dynamic oc) {
+    if (uploading) {
+      return Container(
+        color: context.oc.border,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (photos.isNotEmpty) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            photos.first,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _Placeholder(onTap: onPick),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return _Placeholder(onTap: onPick);
+  }
+}
+
+class _Placeholder extends StatelessWidget {
+  const _Placeholder({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final oc = context.oc;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          color: oc.surface,
+          border: Border.all(
+            color: oc.border,
+            width: 1.5,
+            style: BorderStyle.solid,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              size: 36,
+              color: oc.icons,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ajouter une photo (optionnel)',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: oc.secondaryText,
+                  ),
+            ),
+          ],
         ),
       ),
     );
