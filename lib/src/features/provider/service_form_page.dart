@@ -129,6 +129,16 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_zones.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Ajoutez au moins une zone d\'intervention.'),
+          backgroundColor: context.oc.error,
+        ),
+      );
+      return;
+    }
+
     final authState = ref.read(authNotifierProvider).valueOrNull;
     if (authState is! AuthAuthenticated) return;
 
@@ -306,7 +316,7 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
               const SizedBox(height: 20),
 
               // Zones d'intervention
-              const _Label('Zones d\'intervention'),
+              const _Label('Zones d\'intervention *'),
               _ZonesSection(
                 zones: _zones,
                 onRemove: _removeZone,
