@@ -97,6 +97,16 @@ Inbox → Voir demande
 
 ## 4. Schéma Firestore
 
+### `service_types/{categoryId}`
+Collection de référence — définit les catégories de services autorisées. Document ID = valeur de `categoryId`.
+
+| Champ | Type | Notes |
+|---|---|---|
+| `label` | String | Nom affiché (ex: "Ménage") |
+| `active` | bool | Si `false`, la catégorie n'est plus proposable |
+| `sortOrder` | int | Ordre d'affichage |
+| `createdAt` | Timestamp | UTC |
+
 ### `users/{uid}`
 | Champ | Type | Notes |
 |---|---|---|
@@ -141,7 +151,12 @@ Lecture publique.
 - `menage` — Ménage & entretien
 - `plomberie` — Plomberie
 - `jardinage` — Jardinage & extérieur
-- `autre` — Autre service
+- `electricite` — Électricité
+- `peinture` — Peinture
+- `bricolage` — Bricolage & montage
+- `gardeEnfants` — Garde d'enfants
+
+Les catégories sont contrôlées par la collection `service_types/`. Pas de catégorie libre — c'est l'admin qui définit les types de service disponibles.
 
 ### `bookings/{bookingId}`
 Collection racine (pas de sous-collection).

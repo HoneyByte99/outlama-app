@@ -159,7 +159,7 @@ class FirestoreCollections {
       id: snap.id,
       providerId: (data['providerId'] as String?) ?? '',
       categoryId: CategoryId.fromString(
-        (data['categoryId'] as String?) ?? CategoryId.autre.name,
+        (data['categoryId'] as String?) ?? CategoryId.menage.name,
       ),
       title: (data['title'] as String?) ?? '',
       description: data['description'] as String?,

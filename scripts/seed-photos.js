@@ -39,10 +39,25 @@ const SERVICE_PHOTOS = {
     'https://images.unsplash.com/photo-1599598425997-5202edd56bdb?w=900&q=80',
     'https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=900&q=80',
   ],
-  autre: [
+  electricite: [
     'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=900&q=80',
     'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=900&q=80',
     'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=900&q=80',
+  ],
+  peinture: [
+    'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=900&q=80',
+    'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=900&q=80',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=80',
+  ],
+  bricolage: [
+    'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=900&q=80',
+    'https://images.unsplash.com/photo-1530124566582-a45a7e3d0c70?w=900&q=80',
+    'https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=900&q=80',
+  ],
+  gardeEnfants: [
+    'https://images.unsplash.com/photo-1587654780293-06a082aab379?w=900&q=80',
+    'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=900&q=80',
+    'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=900&q=80',
   ],
 };
 
@@ -64,7 +79,7 @@ const PERSON_PHOTOS = [
 // for consecutive docs of the same type
 let _counters = {};
 function pick(bank, key) {
-  const arr = bank[key] ?? bank.autre ?? Object.values(bank)[0];
+  const arr = bank[key] ?? bank.menage ?? Object.values(bank)[0];
   _counters[key] = (_counters[key] ?? 0) % arr.length;
   return arr[_counters[key]++];
 }
@@ -88,7 +103,7 @@ async function main() {
       console.log(`  ✓ ${doc.id} (${data.categoryId}) — already has photo, skipping`);
       continue;
     }
-    const category = data.categoryId ?? 'autre';
+    const category = data.categoryId ?? 'menage';
     const photo = pick(SERVICE_PHOTOS, category);
     serviceBatch.update(doc.ref, { photos: [photo] });
     console.log(`  ✅ ${doc.id} (${category}) → ${photo.slice(0, 60)}…`);

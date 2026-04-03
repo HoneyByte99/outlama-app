@@ -474,12 +474,8 @@ class _CategorySelector extends StatelessWidget {
   final CategoryId value;
   final ValueChanged<CategoryId> onChanged;
 
-  static const _labels = {
-    CategoryId.menage: 'Ménage',
-    CategoryId.plomberie: 'Plomberie',
-    CategoryId.jardinage: 'Jardinage',
-    CategoryId.autre: 'Autre',
-  };
+  static Map<CategoryId, String> get _labels =>
+      {for (final c in CategoryId.values) c: c.label};
 
   @override
   Widget build(BuildContext context) {

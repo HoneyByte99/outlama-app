@@ -245,7 +245,7 @@ function services(providerUids) {
     },
     {
       providerId: fatou,
-      categoryId: 'autre',
+      categoryId: 'gardeEnfants',
       title: 'Garde d\'enfants à domicile',
       description:
         'Garde d\'enfants de 2 à 12 ans. Aide aux devoirs incluse pour les scolaires. Expérience 5 ans, diplômée BAFA.',
@@ -256,10 +256,10 @@ function services(providerUids) {
       photos: [],
     },
 
-    // ---- Autre services variés ----
+    // ---- Bricolage ----
     {
       providerId: pierre,
-      categoryId: 'autre',
+      categoryId: 'bricolage',
       title: 'Montage de meubles',
       description:
         'Montage de tous types de meubles (IKEA, But, Conforama…). Rapide et soigné. À partir de 2 meubles, déplacement offert.',

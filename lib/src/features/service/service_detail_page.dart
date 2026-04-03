@@ -212,18 +212,7 @@ class _CategoryBadge extends StatelessWidget {
     );
   }
 
-  String _label(CategoryId id) {
-    switch (id) {
-      case CategoryId.menage:
-        return 'Ménage';
-      case CategoryId.plomberie:
-        return 'Plomberie';
-      case CategoryId.jardinage:
-        return 'Jardinage';
-      case CategoryId.autre:
-        return 'Autre';
-    }
-  }
+  String _label(CategoryId id) => id.label;
 }
 
 // ---------------------------------------------------------------------------

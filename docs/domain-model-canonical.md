@@ -221,7 +221,7 @@ Country       : FR | SN
 ReviewerRole  : client | provider
 TargetType    : user | service | message       (for reports)
 ReportStatus  : open | resolved | dismissed
-CategoryId    : menage | plomberie | jardinage | autre
+CategoryId    : menage | plomberie | jardinage | electricite | peinture | bricolage | gardeEnfants
 ```
 
 ## PhoneShare access rule

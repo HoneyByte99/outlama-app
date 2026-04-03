@@ -12,6 +12,7 @@ import '../../application/user/user_providers.dart';
 import '../../domain/enums/active_mode.dart';
 import '../../domain/enums/category_id.dart';
 import '../../domain/models/service.dart';
+import '../shared/category_icon.dart';
 import '../shared/user_avatar.dart';
 
 // ---------------------------------------------------------------------------
@@ -96,10 +97,7 @@ class _CategoryChipsRow extends ConsumerWidget {
 
     final items = <(String label, CategoryId? value)>[
       ('Tout', null),
-      ('Ménage', CategoryId.menage),
-      ('Plomberie', CategoryId.plomberie),
-      ('Jardinage', CategoryId.jardinage),
-      ('Autre', CategoryId.autre),
+      ...CategoryId.values.map((c) => (c.label, c)),
     ];
 
     return SizedBox(
@@ -389,31 +387,9 @@ class _ServiceCard extends ConsumerWidget {
     );
   }
 
-  String _categoryLabel(CategoryId id) {
-    switch (id) {
-      case CategoryId.menage:
-        return 'Ménage';
-      case CategoryId.plomberie:
-        return 'Plomberie';
-      case CategoryId.jardinage:
-        return 'Jardinage';
-      case CategoryId.autre:
-        return 'Autre';
-    }
-  }
+  String _categoryLabel(CategoryId id) => id.label;
 
-  IconData _categoryIcon(CategoryId id) {
-    switch (id) {
-      case CategoryId.menage:
-        return Icons.cleaning_services_outlined;
-      case CategoryId.plomberie:
-        return Icons.plumbing_outlined;
-      case CategoryId.jardinage:
-        return Icons.yard_outlined;
-      case CategoryId.autre:
-        return Icons.handyman_outlined;
-    }
-  }
+  IconData _categoryIcon(CategoryId id) => id.icon;
 }
 
 // ---------------------------------------------------------------------------

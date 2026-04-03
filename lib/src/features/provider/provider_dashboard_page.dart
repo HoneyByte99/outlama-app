@@ -10,6 +10,7 @@ import '../../application/user/user_providers.dart';
 import '../../domain/enums/active_mode.dart';
 import '../../domain/enums/category_id.dart';
 import '../../domain/models/provider_profile.dart';
+import '../shared/category_icon.dart';
 import '../../domain/models/service.dart';
 
 class ProviderDashboardPage extends ConsumerWidget {
@@ -382,18 +383,7 @@ class _ServiceTile extends ConsumerWidget {
     );
   }
 
-  IconData _categoryIcon(CategoryId categoryId) {
-    switch (categoryId) {
-      case CategoryId.menage:
-        return Icons.cleaning_services_outlined;
-      case CategoryId.plomberie:
-        return Icons.plumbing_outlined;
-      case CategoryId.jardinage:
-        return Icons.yard_outlined;
-      case CategoryId.autre:
-        return Icons.handyman_outlined;
-    }
-  }
+  IconData _categoryIcon(CategoryId categoryId) => categoryId.icon;
 }
 
 class _CategoryChip extends StatelessWidget {
@@ -401,12 +391,8 @@ class _CategoryChip extends StatelessWidget {
 
   final CategoryId categoryId;
 
-  static const _labels = {
-    CategoryId.menage: 'Ménage',
-    CategoryId.plomberie: 'Plomberie',
-    CategoryId.jardinage: 'Jardinage',
-    CategoryId.autre: 'Autre',
-  };
+  static Map<CategoryId, String> get _labels =>
+      {for (final c in CategoryId.values) c: c.label};
 
   @override
   Widget build(BuildContext context) {
