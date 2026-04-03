@@ -196,7 +196,7 @@ class _ServiceGrid extends ConsumerWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.78,
+            childAspectRatio: 0.85,
           ),
           itemCount: filtered.length,
           itemBuilder: (context, i) {
@@ -226,76 +226,87 @@ class _ServiceCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => context.push(AppRoutes.serviceDetail(service.id)),
-      child: Container(
-        decoration: BoxDecoration(
-          color: oc.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: oc.border),
-          boxShadow: [
-            BoxShadow(
-              color: oc.shadow,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            // Photo area
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              child: SizedBox(
-                height: 110,
-                width: double.infinity,
-                child: service.photos.isNotEmpty
-                    ? Image.network(
-                        service.photos.first,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: 110,
-                        alignment: Alignment.center,
-                        errorBuilder: (_, __, ___) => _iconPlaceholder(oc),
-                      )
-                    : _iconPlaceholder(oc),
+            // Full-bleed image (or icon fallback)
+            service.photos.isNotEmpty
+                ? Image.network(
+                    service.photos.first,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    errorBuilder: (_, __, ___) => _iconPlaceholder(oc),
+                  )
+                : _iconPlaceholder(oc),
+
+            // Gradient overlay — dark at bottom, transparent at top
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.35, 1.0],
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.72),
+                  ],
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+
+            // Category badge — top-left
+            Positioned(
+              top: 10,
+              left: 10,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: oc.primary.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  _categoryLabel(service.categoryId),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+            ),
+
+            // Title + price — bottom
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: 12,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Category badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: oc.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      _categoryLabel(service.categoryId),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: oc.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
                   Text(
                     service.title,
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          shadows: [
+                            const Shadow(
+                              blurRadius: 4,
+                              color: Colors.black54,
+                            ),
+                          ],
+                        ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     priceLabel,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: oc.primary,
-                          fontWeight: FontWeight.w600,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w700,
                         ),
                   ),
                 ],
@@ -309,11 +320,13 @@ class _ServiceCard extends StatelessWidget {
 
   Widget _iconPlaceholder(dynamic oc) {
     return Container(
-      color: oc.primary.withValues(alpha: 0.06),
-      child: Icon(
-        _categoryIcon(service.categoryId),
-        size: 36,
-        color: oc.primary.withValues(alpha: 0.4),
+      color: oc.primary.withValues(alpha: 0.08),
+      child: Center(
+        child: Icon(
+          _categoryIcon(service.categoryId),
+          size: 40,
+          color: oc.primary.withValues(alpha: 0.35),
+        ),
       ),
     );
   }
@@ -361,14 +374,12 @@ class _ServiceGridLoading extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.78,
+        childAspectRatio: 0.85,
       ),
       itemCount: 6,
-      itemBuilder: (_, __) => Container(
-        decoration: BoxDecoration(
-          color: oc.border,
-          borderRadius: BorderRadius.circular(16),
-        ),
+      itemBuilder: (_, __) => ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(color: oc.border),
       ),
     );
   }
