@@ -14,6 +14,7 @@ import '../features/booking/booking_list_page.dart';
 import '../features/chat/chat_page.dart';
 import '../features/chat/chats_list_page.dart';
 import '../features/home/home_page.dart';
+import '../features/profile/profile_page.dart';
 import '../features/provider/provider_dashboard_page.dart';
 import '../features/provider/provider_inbox_page.dart';
 import '../features/provider/provider_onboarding_page.dart';
@@ -22,7 +23,6 @@ import '../features/notifications/notifications_page.dart';
 import '../features/report/report_page.dart';
 import '../features/review/review_form_page.dart';
 import '../features/service/service_detail_page.dart';
-import '../features/switch_mode/switch_mode_page.dart';
 import 'app_shell.dart';
 
 // ---------------------------------------------------------------------------
@@ -50,6 +50,8 @@ abstract final class AppRoutes {
   // Parameterised helpers
   static const notifications = '/notifications';
   static const chatsList = '/chats';
+
+  static const profile = '/profile';
 
   static String chat(String chatId) => '/chat/$chatId';
   static String review(String bookingId) => '/review/$bookingId';
@@ -98,8 +100,9 @@ class RouterNotifier extends ChangeNotifier {
               loc == AppRoutes.home || loc == AppRoutes.bookings;
           final isProviderTab = loc == AppRoutes.providerHome ||
               loc == AppRoutes.providerInbox;
-          // /chats is shared between modes — never redirect away from it.
-          final isSharedTab = loc == AppRoutes.chatsList;
+          // /chats and /profile are shared between modes — never redirect away.
+          final isSharedTab =
+              loc == AppRoutes.chatsList || loc == AppRoutes.profile;
 
           if (!isSharedTab && mode == ActiveMode.provider && isClientTab) {
             return AppRoutes.providerHome;
@@ -136,13 +139,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.signUp,
         name: 'sign-up',
         builder: (_, __) => const SignUpPage(),
-      ),
-
-      // ---- Switch mode ----
-      GoRoute(
-        path: AppRoutes.switchMode,
-        name: 'switch-mode',
-        builder: (_, __) => const SwitchModePage(),
       ),
 
       // ---- Provider onboarding (outside shell — full screen) ----
@@ -245,6 +241,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: AppRoutes.chatsList,
                 name: 'chats-list',
                 builder: (_, __) => const ChatsListPage(),
+              ),
+            ],
+          ),
+
+          // Branch 5 — Profile & Settings (shared between client and provider)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.profile,
+                name: 'profile',
+                builder: (_, __) => const ProfilePage(),
               ),
             ],
           ),

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../app/app_shell.dart';
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
-import '../../application/auth/auth_providers.dart';
 import '../../application/provider/provider_providers.dart';
 import '../../domain/enums/category_id.dart';
 import '../../domain/models/provider_profile.dart';
@@ -39,17 +38,7 @@ class ProviderDashboardPage extends ConsumerWidget {
                 tooltip: 'Mon profil prestataire',
               ),
               const BellIconButton(),
-              IconButton(
-                icon: const Icon(Icons.swap_horiz_rounded),
-                onPressed: () => context.push(AppRoutes.switchMode),
-                tooltip: 'Changer de mode',
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout_outlined),
-                tooltip: 'Se déconnecter',
-                onPressed: () =>
-                    ref.read(authNotifierProvider.notifier).signOut(),
-              ),
+              const SizedBox(width: 4),
             ],
           ),
 

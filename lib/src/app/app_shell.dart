@@ -12,25 +12,25 @@ import 'app_theme.dart';
 
 /// Shell scaffold with mode-aware bottom navigation.
 ///
-/// Client mode   → Tab 0: Accueil | Tab 1: Réservations | Tab 2: Chats
-/// Provider mode → Tab 0: Dashboard | Tab 1: Missions  | Tab 2: Chats
+/// Client mode   → Tab 0: Accueil | Tab 1: Réservations | Tab 2: Chats | Tab 3: Profil
+/// Provider mode → Tab 0: Dashboard | Tab 1: Missions | Tab 2: Chats | Tab 3: Profil
 ///
 /// Branch layout in the router:
 ///   0 = client home, 1 = client bookings,
 ///   2 = provider dashboard, 3 = provider inbox,
-///   4 = chats (shared)
+///   4 = chats (shared), 5 = profile (shared)
 ///
 /// Logical tab → branch index mapping:
-///   Client:   0→0, 1→1, 2→4
-///   Provider: 0→2, 1→3, 2→4
+///   Client:   0→0, 1→1, 2→4, 3→5
+///   Provider: 0→2, 1→3, 2→4, 3→5
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
   // Maps logical tab index to router branch index per mode.
-  static const _clientBranches = [0, 1, 4];
-  static const _providerBranches = [2, 3, 4];
+  static const _clientBranches = [0, 1, 4, 5];
+  static const _providerBranches = [2, 3, 4, 5];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,7 +41,7 @@ class AppShell extends ConsumerWidget {
 
     // Find which logical tab corresponds to the current branch.
     final currentBranch = shell.currentIndex;
-    final currentLogical = branches.indexOf(currentBranch).clamp(0, 2);
+    final currentLogical = branches.indexOf(currentBranch).clamp(0, 3);
 
     void onTap(int logicalIndex) {
       final branchIndex = branches[logicalIndex];
@@ -102,6 +102,11 @@ List<BottomNavigationBarItem> _clientNavItems(int activeCount) {
       activeIcon: Icon(Icons.chat_bubble_rounded),
       label: 'Chats',
     ),
+    const BottomNavigationBarItem(
+      icon: Icon(Icons.person_outline_rounded),
+      activeIcon: Icon(Icons.person_rounded),
+      label: 'Profil',
+    ),
   ];
 }
 
@@ -121,6 +126,11 @@ List<BottomNavigationBarItem> _providerNavItems(int inboxCount) {
       icon: Icon(Icons.chat_bubble_outline_rounded),
       activeIcon: Icon(Icons.chat_bubble_rounded),
       label: 'Chats',
+    ),
+    const BottomNavigationBarItem(
+      icon: Icon(Icons.person_outline_rounded),
+      activeIcon: Icon(Icons.person_rounded),
+      label: 'Profil',
     ),
   ];
 }
