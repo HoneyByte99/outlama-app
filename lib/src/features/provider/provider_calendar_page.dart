@@ -411,7 +411,7 @@ class _UpcomingBookingTile extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () =>
-          context.push(AppRoutes.providerBookingDetail(booking.id)),
+          context.push(AppRoutes.bookingDeepLink(booking.id)),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
@@ -499,7 +499,7 @@ class _BookingTile extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () =>
-          context.push(AppRoutes.providerBookingDetail(booking.id)),
+          context.push(AppRoutes.bookingDeepLink(booking.id)),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),

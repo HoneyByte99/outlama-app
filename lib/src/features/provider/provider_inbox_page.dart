@@ -206,8 +206,11 @@ class _InboxCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                _StatusChip(status: booking.status),
-                const SizedBox(width: 4),
+                const SizedBox(width: 8),
+                Flexible(
+                  flex: 0,
+                  child: _StatusChip(status: booking.status),
+                ),
                 Icon(
                   Icons.chevron_right_rounded,
                   color: oc.icons,
