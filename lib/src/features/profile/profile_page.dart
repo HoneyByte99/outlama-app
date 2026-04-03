@@ -798,27 +798,78 @@ class _AccountSection extends ConsumerWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: () async {
+          final oc = context.oc;
           final confirmed = await showDialog<bool>(
             context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Se d\u00e9connecter ?'),
-              content: const Text(
-                  'Voulez-vous vraiment vous d\u00e9connecter ?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Annuler'),
+            builder: (ctx) => Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: oc.error.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.logout_rounded,
+                          color: oc.error, size: 28),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Se d\u00e9connecter ?',
+                      style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Vous devrez saisir vos identifiants pour vous reconnecter.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                            color: oc.secondaryText,
+                          ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Annuler'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: oc.error,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(0, 48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('D\u00e9connexion'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.oc.error,
-                    foregroundColor: Colors.white,
-                    minimumSize: Size.zero,
-                  ),
-                  child: const Text('D\u00e9connexion'),
-                ),
-              ],
+              ),
             ),
           );
           if (confirmed == true) {
