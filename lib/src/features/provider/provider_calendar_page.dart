@@ -193,16 +193,15 @@ class _ProviderCalendarPageState
               ),
             ),
 
-          // Day detail (if a day is selected)
+          // Day detail OR upcoming bookings — not both
           if (_selectedDay != null)
             _DayDetailSliver(
               day: _selectedDay!,
               bookings: bookings,
               blockedSlots: blockedSlots,
-            ),
-
-          // Always show upcoming bookings
-          _UpcomingBookingsSliver(bookings: bookings),
+            )
+          else
+            _UpcomingBookingsSliver(bookings: bookings),
         ],
       ),
     );
@@ -282,15 +281,22 @@ class _DayDetailSliver extends ConsumerWidget {
     }).toList();
 
     if (dayBookings.isEmpty && daySlots.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(
-          child: Text(
-            'Aucun RDV ce jour',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: oc.secondaryText),
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Row(
+            children: [
+              Icon(Icons.event_available_outlined,
+                  size: 20, color: oc.icons),
+              const SizedBox(width: 8),
+              Text(
+                'Aucun RDV ce jour',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: oc.secondaryText),
+              ),
+            ],
           ),
         ),
       );
