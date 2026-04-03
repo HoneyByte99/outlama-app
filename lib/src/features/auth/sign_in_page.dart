@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
+import '../../application/theme/theme_provider.dart';
 
 class SignInPage extends ConsumerStatefulWidget {
   const SignInPage({super.key});
@@ -43,7 +44,6 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         email: email,
         password: password,
       );
-      // GoRouter redirect handles navigation after auth state changes.
     } on FirebaseAuthException catch (e) {
       _showError(_mapFirebaseError(e.code));
     } catch (_) {
@@ -72,72 +72,126 @@ class _SignInPageState extends ConsumerState<SignInPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final oc = context.oc;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: oc.surface,
+        backgroundColor: oc.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          actions: const [_ThemeToggleButton(), SizedBox(width: 8)],
+        ),
         body: SafeArea(
+          top: false,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 48),
-                _Logo(),
+                const SizedBox(height: 16),
+
+                // ---- Logo ----
+                Image.asset(
+                  'assets/images/logo_outalma.png',
+                  height: 130,
+                ),
                 const SizedBox(height: 40),
+
+                // ---- Heading ----
                 Text(
                   'Bon retour !',
-                  style: theme.textTheme.headlineLarge,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Connectez-vous pour accéder à vos services.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: oc.secondaryText,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                _EmailField(controller: _emailController),
-                const SizedBox(height: 12),
-                _PasswordField(
-                  controller: _passwordController,
-                  obscure: _obscurePassword,
-                  onToggle: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                ),
-                const SizedBox(height: 28),
-                _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: _signIn,
-                        child: const Text('Se connecter'),
-                      ),
-                const SizedBox(height: 20),
-                Center(
-                  child: Text.rich(
-                    TextSpan(
-                      text: "Pas de compte ? ",
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: oc.secondaryText,
                       ),
-                      children: [
-                        TextSpan(
-                          text: "S'inscrire",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: oc.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => context.go(AppRoutes.signUp),
-                        ),
-                      ],
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 36),
+
+                // ---- Fields ----
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  autocorrect: false,
+                  decoration: const InputDecoration(
+                    hintText: 'Adresse email',
+                    prefixIcon: Icon(Icons.email_outlined, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _signIn(),
+                  decoration: InputDecoration(
+                    hintText: 'Mot de passe',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: oc.icons,
+                        size: 20,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
+
+                // ---- CTA ----
+                _loading
+                    ? const Center(
+                        child: SizedBox(
+                          height: 48,
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _signIn,
+                          child: const Text('Se connecter'),
+                        ),
+                      ),
+                const SizedBox(height: 24),
+
+                // ---- Footer link ----
+                Text.rich(
+                  TextSpan(
+                    text: "Pas de compte ? ",
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: oc.secondaryText,
+                        ),
+                    children: [
+                      TextSpan(
+                        text: "S'inscrire",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: oc.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => context.go(AppRoutes.signUp),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -147,58 +201,63 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   }
 }
 
-class _Logo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/logo_outalma.png',
-      height: 72,
-      alignment: Alignment.centerLeft,
-    );
-  }
-}
+// ---------------------------------------------------------------------------
+// Theme toggle button — cycles system → light → dark
+// ---------------------------------------------------------------------------
 
-class _EmailField extends StatelessWidget {
-  const _EmailField({required this.controller});
-  final TextEditingController controller;
+class _ThemeToggleButton extends ConsumerWidget {
+  const _ThemeToggleButton();
 
   @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: TextInputType.emailAddress,
-      textInputAction: TextInputAction.next,
-      autocorrect: false,
-      decoration: const InputDecoration(hintText: 'Adresse email'),
-    );
-  }
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final oc = context.oc;
+    final current = ref.watch(themeModeProvider);
 
-class _PasswordField extends StatelessWidget {
-  const _PasswordField({
-    required this.controller,
-    required this.obscure,
-    required this.onToggle,
-  });
+    final (icon, next, label) = switch (current) {
+      ThemeMode.light => (
+          Icons.dark_mode_outlined,
+          ThemeMode.dark,
+          'Sombre',
+        ),
+      ThemeMode.dark => (
+          Icons.brightness_auto_outlined,
+          ThemeMode.system,
+          'Auto',
+        ),
+      _ => (
+          Icons.light_mode_outlined,
+          ThemeMode.light,
+          'Clair',
+        ),
+    };
 
-  final TextEditingController controller;
-  final bool obscure;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      textInputAction: TextInputAction.done,
-      decoration: InputDecoration(
-        hintText: 'Mot de passe',
-        suffixIcon: IconButton(
-          icon: Icon(
-            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            color: context.oc.icons,
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () =>
+            ref.read(themeModeProvider.notifier).setThemeMode(next),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: oc.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: oc.border),
           ),
-          onPressed: onToggle,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: oc.primaryText),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: oc.primaryText,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );

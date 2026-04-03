@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
 import '../../application/auth/auth_providers.dart';
+import '../../application/theme/theme_provider.dart';
 
 class SignUpPage extends ConsumerStatefulWidget {
   const SignUpPage({super.key});
@@ -61,17 +62,12 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
         password: password,
       );
 
-      final uid = credential.user!.uid;
-
-      // Persist user doc with chosen display name before authStateChanges fires.
       await ref.read(authNotifierProvider.notifier).createUserDoc(
-            uid: uid,
+            uid: credential.user!.uid,
             displayName: name,
             email: email,
             phoneE164: phone.isEmpty ? null : phone,
           );
-
-      // GoRouter redirect handles navigation.
     } on FirebaseAuthException catch (e) {
       _showError(_mapFirebaseError(e.code));
     } catch (_) {
@@ -81,10 +77,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     }
   }
 
-  bool _isValidE164(String phone) {
-    // Must start with + followed by 7–15 digits
-    return RegExp(r'^\+\d{7,15}$').hasMatch(phone);
-  }
+  bool _isValidE164(String phone) =>
+      RegExp(r'^\+\d{7,15}$').hasMatch(phone);
 
   void _showError(String message) {
     if (!mounted) return;
@@ -104,39 +98,61 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final oc = context.oc;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: oc.surface,
+        backgroundColor: oc.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          actions: const [_ThemeToggleButton(), SizedBox(width: 8)],
+        ),
         body: SafeArea(
+          top: false,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 48),
-                _Logo(),
-                const SizedBox(height: 40),
+                const SizedBox(height: 16),
+
+                // ---- Logo ----
+                Image.asset(
+                  'assets/images/logo_outalma.png',
+                  height: 110,
+                ),
+                const SizedBox(height: 32),
+
+                // ---- Heading ----
                 Text(
                   'Créez votre compte',
-                  style: theme.textTheme.headlineLarge,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Rejoignez Outalma et accédez à des services à domicile.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: oc.secondaryText,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: oc.secondaryText,
+                      ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
+
+                // ---- Fields ----
                 TextField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(hintText: 'Votre nom'),
+                  decoration: const InputDecoration(
+                    hintText: 'Votre nom complet',
+                    prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -144,8 +160,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
-                  decoration:
-                      const InputDecoration(hintText: 'Adresse email'),
+                  decoration: const InputDecoration(
+                    hintText: 'Adresse email',
+                    prefixIcon: Icon(Icons.email_outlined, size: 20),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -154,7 +172,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     hintText: 'Téléphone (optionnel) — ex : +33612345678',
-                    prefixIcon: Icon(Icons.phone_outlined, color: oc.icons),
+                    prefixIcon: Icon(Icons.phone_outlined, size: 20, color: oc.icons),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -162,50 +180,64 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _signUp(),
                   decoration: InputDecoration(
                     hintText: 'Mot de passe (min. 6 caractères)',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
                         color: oc.icons,
+                        size: 20,
                       ),
-                      onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                 ),
                 const SizedBox(height: 28),
+
+                // ---- CTA ----
                 _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: _signUp,
-                        child: const Text('Créer un compte'),
-                      ),
-                const SizedBox(height: 20),
-                Center(
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Déjà un compte ? ',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: oc.secondaryText,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'Se connecter',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: oc.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => context.go(AppRoutes.signIn),
+                    ? const Center(
+                        child: SizedBox(
+                          height: 48,
+                          child: CircularProgressIndicator(),
                         ),
-                      ],
-                    ),
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _signUp,
+                          child: const Text('Créer un compte'),
+                        ),
+                      ),
+                const SizedBox(height: 24),
+
+                // ---- Footer link ----
+                Text.rich(
+                  TextSpan(
+                    text: 'Déjà un compte ? ',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: oc.secondaryText,
+                        ),
+                    children: [
+                      TextSpan(
+                        text: 'Se connecter',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: oc.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => context.go(AppRoutes.signIn),
+                      ),
+                    ],
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -215,13 +247,65 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   }
 }
 
-class _Logo extends StatelessWidget {
+// ---------------------------------------------------------------------------
+// Theme toggle button — cycles system → light → dark
+// ---------------------------------------------------------------------------
+
+class _ThemeToggleButton extends ConsumerWidget {
+  const _ThemeToggleButton();
+
   @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/logo_outalma.png',
-      height: 72,
-      alignment: Alignment.centerLeft,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final oc = context.oc;
+    final current = ref.watch(themeModeProvider);
+
+    final (icon, next, label) = switch (current) {
+      ThemeMode.light => (
+          Icons.dark_mode_outlined,
+          ThemeMode.dark,
+          'Sombre',
+        ),
+      ThemeMode.dark => (
+          Icons.brightness_auto_outlined,
+          ThemeMode.system,
+          'Auto',
+        ),
+      _ => (
+          Icons.light_mode_outlined,
+          ThemeMode.light,
+          'Clair',
+        ),
+    };
+
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () =>
+            ref.read(themeModeProvider.notifier).setThemeMode(next),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: oc.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: oc.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: oc.primaryText),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: oc.primaryText,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
