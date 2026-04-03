@@ -847,17 +847,18 @@ class _BlockSlotSheetState extends State<_BlockSlotSheet> {
     DateTime startDt;
     DateTime? endDt;
 
+    // Use UTC noon to avoid timezone day-shift (local midnight → UTC = previous day)
     if (_durationDays > 1) {
-      startDt = DateTime(_startDate.year, _startDate.month, _startDate.day);
+      startDt = DateTime.utc(_startDate.year, _startDate.month, _startDate.day, 12);
       final ed = _startDate.add(Duration(days: _durationDays - 1));
-      endDt = DateTime(ed.year, ed.month, ed.day, 23, 59);
+      endDt = DateTime.utc(ed.year, ed.month, ed.day, 23, 59);
     } else if (_fullDay) {
-      startDt = DateTime(_startDate.year, _startDate.month, _startDate.day);
+      startDt = DateTime.utc(_startDate.year, _startDate.month, _startDate.day, 12);
     } else {
-      startDt = DateTime(
-          _startDate.year, _startDate.month, _startDate.day, _startHour, 0);
-      endDt = DateTime(
-          _startDate.year, _startDate.month, _startDate.day, _endHour, 0);
+      startDt = DateTime.utc(
+          _startDate.year, _startDate.month, _startDate.day, _startHour);
+      endDt = DateTime.utc(
+          _startDate.year, _startDate.month, _startDate.day, _endHour);
     }
 
     Navigator.of(context).pop(BlockedSlot(
