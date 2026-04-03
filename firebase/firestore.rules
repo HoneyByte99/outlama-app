@@ -62,15 +62,18 @@ service cloud.firestore {
     }
 
     // ---------- BOOKINGS (private) ----------
+    // Note: isBookingParticipant() is NOT used here — it calls get() on the
+    // booking document itself (circular reference), which Firestore denies for
+    // both get and list. Use resource.data directly instead.
     match /bookings/{bookingId} {
-      // get: can use isBookingParticipant (calls get() on the same doc — valid for single-doc reads).
-      allow get: if isAdmin() || isBookingParticipant(bookingId);
+      function isParticipant() {
+        return signedIn()
+          && (resource.data.customerId == request.auth.uid
+              || resource.data.providerId == request.auth.uid);
+      }
 
-      // list: must use resource.data directly; get() on the iterated document is disallowed in list queries.
-      allow list: if isAdmin()
-        || (signedIn()
-            && (resource.data.customerId == request.auth.uid
-                || resource.data.providerId == request.auth.uid));
+      allow get: if isAdmin() || isParticipant();
+      allow list: if isAdmin() || isParticipant();
 
       // Create: customer creates; status must start as "requested"
       allow create: if isAdmin()
@@ -81,7 +84,7 @@ service cloud.firestore {
       // Update: participants may update non-status fields only.
       // Status is immutable from client — all transitions via Cloud Functions.
       allow update: if isAdmin()
-        || (isBookingParticipant(bookingId)
+        || (isParticipant()
             && request.resource.data.customerId == resource.data.customerId
             && request.resource.data.providerId == resource.data.providerId
             && request.resource.data.serviceId == resource.data.serviceId
