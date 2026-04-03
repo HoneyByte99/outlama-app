@@ -1,4 +1,5 @@
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -19,11 +20,15 @@ class ServicePhotoUploadService {
   /// Returns null if the user cancelled without selecting an image.
   Future<String?> pickAndUpload(String serviceId) async {
     final picker = ImagePicker();
-    final XFile? file = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1024,
-      imageQuality: 80,
-    );
+    // maxWidth and imageQuality are not supported on Flutter Web and cause
+    // a PlatformException (decodeEnvelope). Skip them on web.
+    final XFile? file = kIsWeb
+        ? await picker.pickImage(source: ImageSource.gallery)
+        : await picker.pickImage(
+            source: ImageSource.gallery,
+            maxWidth: 1024,
+            imageQuality: 80,
+          );
 
     if (file == null) return null;
 
