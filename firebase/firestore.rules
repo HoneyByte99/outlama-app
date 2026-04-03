@@ -125,8 +125,12 @@ service cloud.firestore {
               && request.resource.data.createdAt is timestamp
               && request.resource.data.text is string);
 
-        // No edits; admin moderation only
-        allow update: if isAdmin();
+        // Read receipt update: participants may only append their own uid to readBy.
+        allow update: if isAdmin()
+          || (isParticipantViaChat()
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
+              && request.auth.uid in request.resource.data.readBy);
+
         allow delete: if isAdmin();
       }
     }
@@ -171,6 +175,20 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if signedIn();
       allow update, delete: if isAdmin();
+    }
+
+    // ---------- NOTIFICATIONS (private to owner) ----------
+    match /notifications/{uid}/items/{notifId} {
+      allow read: if isSelf(uid);
+
+      // Only Cloud Functions (admin SDK) may create notifications.
+      allow create: if isAdmin();
+
+      // Owner may only flip the 'read' field.
+      allow update: if isSelf(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+
+      allow delete: if isAdmin() || isSelf(uid);
     }
 
     // ---------- Default deny ----------

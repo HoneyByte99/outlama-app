@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../application/auth/auth_providers.dart';
+import '../application/booking/booking_providers.dart';
+import '../application/notification/notification_providers.dart';
+import '../application/provider/provider_providers.dart';
 import '../application/user/user_providers.dart';
 import '../domain/enums/active_mode.dart';
 import 'app_theme.dart';
@@ -27,6 +30,12 @@ class AppShell extends ConsumerWidget {
     final isProvider =
         ref.watch(activeModeProvider) == ActiveMode.provider;
 
+    // Badge counts
+    final providerInboxCount =
+        ref.watch(providerInboxProvider).valueOrNull?.length ?? 0;
+    final clientActiveCount =
+        ref.watch(clientActiveBookingsCountProvider);
+
     // Map logical tab (0/1) to actual branch index.
     final branchOffset = isProvider ? 2 : 0;
     final currentLogical = (shell.currentIndex - branchOffset).clamp(0, 1);
@@ -39,7 +48,9 @@ class AppShell extends ConsumerWidget {
       );
     }
 
-    final items = isProvider ? _providerItems : _clientItems;
+    final items = isProvider
+        ? _providerNavItems(providerInboxCount)
+        : _clientNavItems(clientActiveCount);
 
     return Scaffold(
       body: shell,
@@ -62,28 +73,96 @@ class AppShell extends ConsumerWidget {
   }
 }
 
-const _clientItems = [
-  BottomNavigationBarItem(
-    icon: Icon(Icons.home_outlined),
-    activeIcon: Icon(Icons.home_rounded),
-    label: 'Accueil',
-  ),
-  BottomNavigationBarItem(
-    icon: Icon(Icons.calendar_today_outlined),
-    activeIcon: Icon(Icons.calendar_today_rounded),
-    label: 'Réservations',
-  ),
-];
+// ---------------------------------------------------------------------------
+// Nav item builders with badge support
+// ---------------------------------------------------------------------------
 
-const _providerItems = [
-  BottomNavigationBarItem(
-    icon: Icon(Icons.dashboard_outlined),
-    activeIcon: Icon(Icons.dashboard_rounded),
-    label: 'Tableau de bord',
-  ),
-  BottomNavigationBarItem(
-    icon: Icon(Icons.inbox_outlined),
-    activeIcon: Icon(Icons.inbox_rounded),
-    label: 'Demandes',
-  ),
-];
+List<BottomNavigationBarItem> _clientNavItems(int activeCount) {
+  return [
+    const BottomNavigationBarItem(
+      icon: Icon(Icons.home_outlined),
+      activeIcon: Icon(Icons.home_rounded),
+      label: 'Accueil',
+    ),
+    BottomNavigationBarItem(
+      icon: _BadgedIcon(
+        count: activeCount,
+        icon: Icons.calendar_today_outlined,
+      ),
+      activeIcon: _BadgedIcon(
+        count: activeCount,
+        icon: Icons.calendar_today_rounded,
+      ),
+      label: 'Réservations',
+    ),
+  ];
+}
+
+List<BottomNavigationBarItem> _providerNavItems(int inboxCount) {
+  return [
+    const BottomNavigationBarItem(
+      icon: Icon(Icons.dashboard_outlined),
+      activeIcon: Icon(Icons.dashboard_rounded),
+      label: 'Tableau de bord',
+    ),
+    BottomNavigationBarItem(
+      icon: _BadgedIcon(
+        count: inboxCount,
+        icon: Icons.inbox_outlined,
+      ),
+      activeIcon: _BadgedIcon(
+        count: inboxCount,
+        icon: Icons.inbox_rounded,
+      ),
+      label: 'Demandes',
+    ),
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Reusable badged icon widget
+// ---------------------------------------------------------------------------
+
+class _BadgedIcon extends StatelessWidget {
+  const _BadgedIcon({required this.count, required this.icon});
+
+  final int count;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Badge(
+      isLabelVisible: count > 0,
+      label: Text(
+        '$count',
+        style: const TextStyle(fontSize: 10),
+      ),
+      child: Icon(icon),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bell icon button — reusable across AppBar actions
+// ---------------------------------------------------------------------------
+
+class BellIconButton extends ConsumerWidget {
+  const BellIconButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    return IconButton(
+      tooltip: 'Notifications',
+      onPressed: () => context.push('/notifications'),
+      icon: Badge(
+        isLabelVisible: unreadCount > 0,
+        label: Text(
+          '$unreadCount',
+          style: const TextStyle(fontSize: 10),
+        ),
+        child: const Icon(Icons.notifications_outlined),
+      ),
+    );
+  }
+}

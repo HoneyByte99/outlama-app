@@ -10,6 +10,7 @@ import '../../domain/models/app_user.dart';
 import '../../domain/models/booking.dart';
 import '../../domain/models/chat.dart';
 import '../../domain/models/chat_message.dart';
+import '../../domain/models/app_notification.dart';
 import '../../domain/models/phone_share.dart';
 import '../../domain/models/provider_profile.dart';
 import '../../domain/models/report.dart';
@@ -83,6 +84,20 @@ class FirestoreCollections {
     return db.collection('reports').withConverter<Report>(
           fromFirestore: (snap, _) => _reportFromFirestore(snap),
           toFirestore: (report, _) => _reportToFirestore(report),
+        );
+  }
+
+  static CollectionReference<AppNotification> notifications({
+    required FirebaseFirestore db,
+    required String uid,
+  }) {
+    return db
+        .collection('notifications')
+        .doc(uid)
+        .collection('items')
+        .withConverter<AppNotification>(
+          fromFirestore: (snap, _) => _notificationFromFirestore(snap),
+          toFirestore: (n, _) => _notificationToFirestore(n),
         );
   }
 
@@ -294,6 +309,7 @@ class FirestoreCollections {
       createdAt: dateTimeFromFirestore(data['createdAt']),
       text: data['text'] as String?,
       mediaUrl: data['mediaUrl'] as String?,
+      readBy: (data['readBy'] as List?)?.cast<String>() ?? [],
     );
   }
 
@@ -305,6 +321,7 @@ class FirestoreCollections {
       'createdAt': dateTimeToFirestore(message.createdAt),
       'text': message.text,
       'mediaUrl': message.mediaUrl,
+      'readBy': message.readBy,
     };
   }
 
@@ -412,6 +429,36 @@ class FirestoreCollections {
     return {
       'phone': ps.phone,
       'createdAt': dateTimeToFirestore(ps.createdAt),
+    };
+  }
+
+  // ---- AppNotification ----
+
+  static AppNotification _notificationFromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+  ) {
+    final data = snap.data() ?? const <String, dynamic>{};
+    return AppNotification(
+      id: snap.id,
+      type: (data['type'] as String?) ?? '',
+      title: (data['title'] as String?) ?? '',
+      body: (data['body'] as String?) ?? '',
+      read: (data['read'] as bool?) ?? false,
+      createdAt: dateTimeFromFirestore(data['createdAt']),
+      bookingId: data['bookingId'] as String?,
+      chatId: data['chatId'] as String?,
+    );
+  }
+
+  static Map<String, Object?> _notificationToFirestore(AppNotification n) {
+    return {
+      'type': n.type,
+      'title': n.title,
+      'body': n.body,
+      'read': n.read,
+      'createdAt': dateTimeToFirestore(n.createdAt),
+      'bookingId': n.bookingId,
+      'chatId': n.chatId,
     };
   }
 }

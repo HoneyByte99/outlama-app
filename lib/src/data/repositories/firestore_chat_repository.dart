@@ -41,4 +41,25 @@ class FirestoreChatRepository implements ChatRepository {
     final snap = await ref.get();
     return snap.data()!;
   }
+
+  @override
+  Future<void> markMessagesRead({
+    required String chatId,
+    required String uid,
+  }) async {
+    final col = FirestoreCollections.chatMessages(db: _db, chatId: chatId);
+    final snap = await col.get();
+    final batch = _db.batch();
+    var count = 0;
+    for (final doc in snap.docs) {
+      final msg = doc.data();
+      if (msg.senderId != uid && !msg.readBy.contains(uid)) {
+        batch.update(doc.reference, {
+          'readBy': FieldValue.arrayUnion([uid]),
+        });
+        count++;
+      }
+    }
+    if (count > 0) await batch.commit();
+  }
 }

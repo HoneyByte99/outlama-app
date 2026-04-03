@@ -17,6 +17,7 @@ import '../features/provider/provider_dashboard_page.dart';
 import '../features/provider/provider_inbox_page.dart';
 import '../features/provider/provider_onboarding_page.dart';
 import '../features/provider/service_form_page.dart';
+import '../features/notifications/notifications_page.dart';
 import '../features/report/report_page.dart';
 import '../features/review/review_form_page.dart';
 import '../features/service/service_detail_page.dart';
@@ -46,6 +47,8 @@ abstract final class AppRoutes {
       '/provider/inbox/bookings/$bookingId';
 
   // Parameterised helpers
+  static const notifications = '/notifications';
+
   static String chat(String chatId) => '/chat/$chatId';
   static String review(String bookingId) => '/review/$bookingId';
   static String report({required String type, required String id}) =>
@@ -274,6 +277,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           targetType: state.pathParameters['targetType']!,
           targetId: state.pathParameters['targetId']!,
         ),
+      ),
+
+      // ---- Notifications ----
+      GoRoute(
+        path: AppRoutes.notifications,
+        name: 'notifications',
+        builder: (_, __) => const NotificationsPage(),
       ),
     ],
   );

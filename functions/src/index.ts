@@ -47,6 +47,35 @@ async function sendPushToUsers(
   });
 }
 
+// ---------------------------------------------------------------------------
+// In-app notification helper
+// ---------------------------------------------------------------------------
+
+async function createNotification(
+  uid: string,
+  data: {
+    type: string;
+    title: string;
+    body: string;
+    bookingId?: string;
+    chatId?: string;
+  }
+): Promise<void> {
+  await db
+    .collection('notifications')
+    .doc(uid)
+    .collection('items')
+    .add({
+      type: data.type,
+      title: data.title,
+      body: data.body,
+      bookingId: data.bookingId ?? null,
+      chatId: data.chatId ?? null,
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+}
+
 type BookingStatus =
   | 'requested'
   | 'accepted'
@@ -203,23 +232,40 @@ export const onMessageCreate = onDocumentCreated(
 
     if (!message) return;
 
-    // Get chat to find participants
+    // Get chat to find participants and bookingId
     const chatSnap = await db.collection('chats').doc(chatId).get();
     if (!chatSnap.exists) return;
-    const chat = chatSnap.data() as { participantIds?: string[] };
+    const chat = chatSnap.data() as {
+      participantIds?: string[];
+      bookingId?: string;
+    };
     const participants = chat.participantIds ?? [];
+    const bookingId = chat.bookingId;
 
     // Update lastMessageAt on the chat document
     await db.collection('chats').doc(chatId).update({
       lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    // Send push to all participants except the sender
+    // Notify all participants except the sender
     const recipients = participants.filter(uid => uid !== message.senderId);
+    const notifTitle = 'Nouveau message';
+    const notifBody = message.text ?? 'Message reçu';
+
     await sendPushToUsers(recipients, {
-      title: 'Nouveau message',
-      body: message.text ?? '📎 Message reçu',
+      title: notifTitle,
+      body: notifBody,
     });
+
+    for (const uid of recipients) {
+      await createNotification(uid, {
+        type: 'new_message',
+        title: notifTitle,
+        body: notifBody,
+        chatId,
+        bookingId,
+      });
+    }
   }
 );
 
@@ -245,14 +291,23 @@ export const onBookingStatusChange = onDocumentUpdated(
 
     logger.info('Booking status changed', { from: before.status, to: status });
 
-    const notifications: { uids: string[]; title: string; body: string }[] = [];
+    const bookingId = event.params.bookingId;
+
+    type NotifEntry = {
+      uids: string[];
+      type: string;
+      title: string;
+      body: string;
+    };
+    const notifications: NotifEntry[] = [];
 
     switch (status) {
       case 'accepted':
         if (customerId) {
           notifications.push({
             uids: [customerId],
-            title: 'Demande acceptée ✅',
+            type: 'booking_accepted',
+            title: 'Demande acceptée',
             body: 'Votre prestataire a accepté votre demande. Vous pouvez maintenant discuter.',
           });
         }
@@ -261,6 +316,7 @@ export const onBookingStatusChange = onDocumentUpdated(
         if (customerId) {
           notifications.push({
             uids: [customerId],
+            type: 'booking_rejected',
             title: 'Demande refusée',
             body: 'Votre demande a été refusée. Vous pouvez en soumettre une nouvelle.',
           });
@@ -270,7 +326,8 @@ export const onBookingStatusChange = onDocumentUpdated(
         if (customerId) {
           notifications.push({
             uids: [customerId],
-            title: 'Service démarré 🚀',
+            type: 'booking_in_progress',
+            title: 'Service démarré',
             body: 'Votre prestataire a démarré le service.',
           });
         }
@@ -279,14 +336,16 @@ export const onBookingStatusChange = onDocumentUpdated(
         if (customerId) {
           notifications.push({
             uids: [customerId],
-            title: 'Service terminé 🎉',
+            type: 'booking_done',
+            title: 'Service terminé',
             body: 'Le service est terminé. Laissez un avis !',
           });
         }
         if (providerId) {
           notifications.push({
             uids: [providerId],
-            title: 'Service terminé 🎉',
+            type: 'booking_done',
+            title: 'Service terminé',
             body: 'Le service est marqué comme terminé. Laissez un avis au client !',
           });
         }
@@ -295,6 +354,14 @@ export const onBookingStatusChange = onDocumentUpdated(
 
     for (const n of notifications) {
       await sendPushToUsers(n.uids, { title: n.title, body: n.body });
+      for (const uid of n.uids) {
+        await createNotification(uid, {
+          type: n.type,
+          title: n.title,
+          body: n.body,
+          bookingId,
+        });
+      }
     }
   }
 );

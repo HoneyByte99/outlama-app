@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_shell.dart';
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
 import '../../application/auth/auth_providers.dart';
@@ -43,6 +44,7 @@ class HomePage extends ConsumerWidget {
             activeMode: activeMode,
             onTap: () => context.push(AppRoutes.switchMode),
           ),
+          const BellIconButton(),
           const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.logout_outlined),

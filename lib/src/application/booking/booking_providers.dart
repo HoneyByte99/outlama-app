@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/auth/auth_providers.dart';
 import '../../application/auth/auth_state.dart';
 import '../../data/repositories/firestore_booking_repository.dart';
+import '../../domain/enums/booking_status.dart';
 import '../../domain/models/booking.dart';
 import '../../domain/repositories/booking_repository.dart';
 import 'create_booking_use_case.dart';
@@ -26,6 +27,18 @@ final customerBookingsProvider = StreamProvider<List<Booking>>((ref) {
 final bookingDetailProvider =
     StreamProvider.family<Booking?, String>((ref, bookingId) {
   return ref.watch(bookingRepositoryProvider).watchById(bookingId);
+});
+
+/// Count of client bookings that require attention (accepted or in_progress).
+final clientActiveBookingsCountProvider = Provider<int>((ref) {
+  final list = ref.watch(customerBookingsProvider).valueOrNull ?? [];
+  return list
+      .where(
+        (b) =>
+            b.status == BookingStatus.accepted ||
+            b.status == BookingStatus.inProgress,
+      )
+      .length;
 });
 
 /// Injectable use case — features layer must consume this, never instantiate

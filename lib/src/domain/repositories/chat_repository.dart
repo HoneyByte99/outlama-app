@@ -10,4 +10,7 @@ abstract interface class ChatRepository {
   });
 
   Future<ChatMessage> sendMessage(ChatMessage message);
+
+  /// Marks all messages in [chatId] not sent by [uid] as read by [uid].
+  Future<void> markMessagesRead({required String chatId, required String uid});
 }

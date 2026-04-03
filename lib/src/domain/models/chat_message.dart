@@ -9,6 +9,7 @@ class ChatMessage {
     required this.createdAt,
     this.text,
     this.mediaUrl,
+    this.readBy = const [],
   });
 
   final String id;
@@ -19,6 +20,9 @@ class ChatMessage {
   final String? text;
   final String? mediaUrl;
 
+  /// UIDs of participants who have read this message.
+  final List<String> readBy;
+
   ChatMessage copyWith({
     String? chatId,
     String? senderId,
@@ -26,6 +30,7 @@ class ChatMessage {
     DateTime? createdAt,
     String? text,
     String? mediaUrl,
+    List<String>? readBy,
   }) {
     return ChatMessage(
       id: id,
@@ -35,6 +40,7 @@ class ChatMessage {
       createdAt: createdAt ?? this.createdAt,
       text: text ?? this.text,
       mediaUrl: mediaUrl ?? this.mediaUrl,
+      readBy: readBy ?? this.readBy,
     );
   }
 }

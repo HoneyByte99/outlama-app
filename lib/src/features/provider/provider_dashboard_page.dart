@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_shell.dart';
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
 import '../../application/auth/auth_providers.dart';
@@ -36,6 +37,7 @@ class ProviderDashboardPage extends ConsumerWidget {
                 onPressed: () => context.push(AppRoutes.providerOnboarding),
                 tooltip: 'Mon profil prestataire',
               ),
+              const BellIconButton(),
               IconButton(
                 icon: const Icon(Icons.swap_horiz_rounded),
                 onPressed: () => context.push(AppRoutes.switchMode),

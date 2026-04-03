@@ -26,10 +26,26 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   bool _sending = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Mark messages read on initial load.
+    Future.microtask(_markRead);
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _markRead() async {
+    final authState = ref.read(authNotifierProvider).valueOrNull;
+    if (authState is! AuthAuthenticated) return;
+    await ref.read(chatRepositoryProvider).markMessagesRead(
+          chatId: widget.chatId,
+          uid: authState.user.id,
+        );
   }
 
   void _scrollToBottom() {
@@ -121,9 +137,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 if (messages.isEmpty) {
                   return _EmptyChat();
                 }
-                // Auto-scroll when new messages arrive.
-                SchedulerBinding.instance
-                    .addPostFrameCallback((_) => _scrollToBottom());
+                // Auto-scroll when new messages arrive and mark them read.
+                SchedulerBinding.instance.addPostFrameCallback((_) {
+                  _scrollToBottom();
+                  _markRead();
+                });
 
                 return ListView.builder(
                   controller: _scrollController,
@@ -132,7 +150,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   itemBuilder: (context, i) {
                     final msg = messages[i];
                     final isMe = msg.senderId == myUid;
-                    return _MessageBubble(message: msg, isMe: isMe);
+                    return _MessageBubble(
+                      message: msg,
+                      isMe: isMe,
+                      myUid: myUid,
+                    );
                   },
                 );
               },
@@ -156,10 +178,15 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 // ---------------------------------------------------------------------------
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isMe});
+  const _MessageBubble({
+    required this.message,
+    required this.isMe,
+    required this.myUid,
+  });
 
   final ChatMessage message;
   final bool isMe;
+  final String? myUid;
 
   @override
   Widget build(BuildContext context) {
@@ -200,6 +227,10 @@ class _MessageBubble extends StatelessWidget {
       );
     }
 
+    // Determine read receipt for own messages.
+    final bool isRead =
+        isMe && message.readBy.any((uid) => uid != myUid);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -224,12 +255,25 @@ class _MessageBubble extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            _formatTime(message.createdAt),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 11,
-                  color: AppColors.icons,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _formatTime(message.createdAt),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 11,
+                      color: AppColors.icons,
+                    ),
+              ),
+              if (isMe) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  isRead ? Icons.done_all : Icons.done,
+                  size: 14,
+                  color: isRead ? AppColors.primary : AppColors.icons,
                 ),
+              ],
+            ],
           ),
         ],
       ),
