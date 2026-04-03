@@ -188,6 +188,7 @@ class _OnboardingBanner extends ConsumerWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: oc.success,
                 foregroundColor: Colors.white,
+                minimumSize: Size.zero,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 10,
