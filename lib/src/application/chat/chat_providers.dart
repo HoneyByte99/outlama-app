@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/auth/auth_providers.dart';
 import '../../application/auth/auth_state.dart';
+import '../../application/user/user_providers.dart';
 import '../../data/repositories/firestore_chat_repository.dart';
+import '../../domain/enums/active_mode.dart';
 import '../../domain/models/chat.dart';
 import '../../domain/models/chat_message.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -29,6 +31,31 @@ final userChatsProvider = StreamProvider<List<Chat>>((ref) {
   final authState = ref.watch(authNotifierProvider).valueOrNull;
   if (authState is! AuthAuthenticated) return const Stream.empty();
   return ref.watch(chatRepositoryProvider).watchForUser(authState.user.id);
+});
+
+/// Watches chats filtered to the user's active mode:
+/// - client mode  → chats where user is customerId
+/// - provider mode → chats where user is providerId
+///
+/// Falls back to showing all chats when customerId/providerId is empty
+/// (legacy documents created before the schema update).
+final chatsForModeProvider = Provider<AsyncValue<List<Chat>>>((ref) {
+  final chatsAsync = ref.watch(userChatsProvider);
+  final authState = ref.watch(authNotifierProvider).valueOrNull;
+  final mode = ref.watch(activeModeProvider);
+
+  if (authState is! AuthAuthenticated) return const AsyncValue.data([]);
+  final uid = authState.user.id;
+
+  return chatsAsync.whenData((chats) {
+    return chats.where((c) {
+      // Legacy document: neither field is set → show in both modes
+      if (c.customerId.isEmpty && c.providerId.isEmpty) return true;
+      return mode == ActiveMode.client
+          ? c.customerId == uid
+          : c.providerId == uid;
+    }).toList();
+  });
 });
 
 /// Unread messages count across all chats (messages not sent by me and not in readBy).

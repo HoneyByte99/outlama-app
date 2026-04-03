@@ -159,6 +159,8 @@ export const acceptBooking = onCall(async (request) => {
       {
         bookingId,
         participantIds: [booking.customerId, booking.providerId],
+        customerId: booking.customerId,
+        providerId: booking.providerId,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         lastMessageAt: null
       },

@@ -20,7 +20,7 @@ class ChatsListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final oc = context.oc;
-    final chatsAsync = ref.watch(userChatsProvider);
+    final chatsAsync = ref.watch(chatsForModeProvider);
 
     return Scaffold(
       backgroundColor: oc.background,

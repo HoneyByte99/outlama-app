@@ -278,6 +278,8 @@ class FirestoreCollections {
       lastMessageAt: data['lastMessageAt'] != null
           ? dateTimeFromFirestore(data['lastMessageAt'])
           : null,
+      customerId: (data['customerId'] as String?) ?? '',
+      providerId: (data['providerId'] as String?) ?? '',
     );
   }
 
@@ -290,6 +292,8 @@ class FirestoreCollections {
           chat.lastMessageAt != null
               ? dateTimeToFirestore(chat.lastMessageAt!)
               : null,
+      'customerId': chat.customerId,
+      'providerId': chat.providerId,
     };
   }
 
