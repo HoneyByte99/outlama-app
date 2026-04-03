@@ -11,6 +11,12 @@ final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
   return FirestoreReviewRepository(ref.watch(firestoreProvider));
 });
 
+/// Watches all reviews received by [userId] (as reviewee).
+final reviewsForUserProvider =
+    StreamProvider.family<List<Review>, String>((ref, userId) {
+  return ref.watch(reviewRepositoryProvider).watchForUser(userId);
+});
+
 /// Watches all reviews for a given booking (at most 2 — one per role).
 final reviewsForBookingProvider =
     StreamProvider.family<List<Review>, String>((ref, bookingId) {

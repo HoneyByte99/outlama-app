@@ -59,6 +59,15 @@ final providerActiveBookingsProvider = StreamProvider<List<Booking>>((ref) {
           .toList());
 });
 
+/// Published services for any given provider uid — used on public profile pages.
+final publicProviderServicesProvider =
+    StreamProvider.family<List<Service>, String>((ref, uid) {
+  return ref
+      .watch(serviceRepositoryProvider)
+      .watchForProvider(uid)
+      .map((list) => list.where((s) => s.published).toList());
+});
+
 /// All bookings the current user has received as provider (full history).
 final providerBookingHistoryProvider = StreamProvider<List<Booking>>((ref) {
   final authState = ref.watch(authNotifierProvider).valueOrNull;

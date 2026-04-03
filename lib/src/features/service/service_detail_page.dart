@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/app_theme.dart';
+import '../../app/router.dart';
 import '../../application/service/service_providers.dart';
+import '../../application/user/user_providers.dart';
 import '../../domain/enums/category_id.dart';
 import '../../domain/enums/price_type.dart';
 import '../../domain/models/service.dart';
 import '../booking/booking_request_sheet.dart';
+import '../shared/user_avatar.dart';
 
 class ServiceDetailPage extends ConsumerWidget {
   const ServiceDetailPage({super.key, required this.serviceId});
@@ -225,37 +229,61 @@ class _ProviderRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final oc = context.oc;
-    // For MVP we show a minimal provider row without a separate provider name
-    // lookup — a full provider profile page is Phase 4.
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: oc.border,
-          child: Icon(Icons.person_outline, color: oc.icons),
+    final user = ref.watch(userByIdProvider(providerId)).valueOrNull;
+
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.providerProfile(providerId)),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: oc.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: oc.border),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Prestataire',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: oc.secondaryText,
-                    ),
+        child: Row(
+          children: [
+            UserAvatar(
+              displayName: user?.displayName ?? '',
+              photoPath: user?.photoPath,
+              radius: 22,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Prestataire',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: oc.secondaryText,
+                        ),
+                  ),
+                  Text(
+                    user?.displayName ?? '—',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: oc.primaryText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
               ),
-              Text(
-                'Voir le profil',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: oc.primaryText,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-            ],
-          ),
+            ),
+            Row(
+              children: [
+                Text(
+                  'Voir le profil',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: oc.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right_rounded, size: 16, color: oc.primary),
+              ],
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

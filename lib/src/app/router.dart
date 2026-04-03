@@ -18,6 +18,7 @@ import '../features/profile/profile_page.dart';
 import '../features/provider/provider_dashboard_page.dart';
 import '../features/provider/provider_inbox_page.dart';
 import '../features/provider/provider_onboarding_page.dart';
+import '../features/provider/public_provider_profile_page.dart';
 import '../features/provider/service_form_page.dart';
 import '../features/notifications/notifications_page.dart';
 import '../features/report/report_page.dart';
@@ -57,6 +58,7 @@ abstract final class AppRoutes {
   static String review(String bookingId) => '/review/$bookingId';
   static String report({required String type, required String id}) =>
       '/report/$type/$id';
+  static String providerProfile(String uid) => '/provider-profile/$uid';
 }
 
 // ---------------------------------------------------------------------------
@@ -301,6 +303,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => ReportPage(
           targetType: state.pathParameters['targetType']!,
           targetId: state.pathParameters['targetId']!,
+        ),
+      ),
+
+      // ---- Public provider profile ----
+      GoRoute(
+        path: '/provider-profile/:uid',
+        name: 'provider-profile',
+        builder: (_, state) => PublicProviderProfilePage(
+          providerId: state.pathParameters['uid']!,
         ),
       ),
 
