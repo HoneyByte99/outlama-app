@@ -115,7 +115,7 @@ class NotificationsPage extends ConsumerWidget {
     if (notif.chatId != null) {
       context.push(AppRoutes.chat(notif.chatId!));
     } else if (notif.bookingId != null) {
-      context.push(AppRoutes.bookingDetail(notif.bookingId!));
+      context.push(AppRoutes.bookingDeepLink(notif.bookingId!));
     }
   }
 }

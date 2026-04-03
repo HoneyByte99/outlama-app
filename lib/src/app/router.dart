@@ -43,6 +43,9 @@ abstract final class AppRoutes {
 
   static String serviceDetail(String serviceId) => '/service/$serviceId';
   static String bookingDetail(String bookingId) => '/bookings/$bookingId';
+  /// Deep-link path for notifications — resolves outside the shell to avoid
+  /// duplicate-key conflict with the shell-nested /bookings/:bookingId route.
+  static String bookingDeepLink(String bookingId) => '/booking/$bookingId';
   static String serviceEdit(String serviceId) =>
       '/provider/services/$serviceId/edit';
   static String providerBookingDetail(String bookingId) =>
@@ -292,10 +295,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // ---- Booking detail (accessible from notifications etc.) ----
+      // ---- Booking detail deep-link (notifications, external links) ----
+      // Uses /booking/:id (singular) to avoid conflict with the shell-nested
+      // /bookings/:id route which GoRouter would otherwise match twice.
       GoRoute(
-        path: '/bookings/:bookingId',
-        name: 'booking-detail-root',
+        path: '/booking/:bookingId',
+        name: 'booking-deep-link',
         builder: (_, state) => BookingDetailPage(
           bookingId: state.pathParameters['bookingId']!,
         ),
