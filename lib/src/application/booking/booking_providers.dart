@@ -1,3 +1,4 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/auth/auth_providers.dart';
@@ -5,6 +6,7 @@ import '../../application/auth/auth_state.dart';
 import '../../data/repositories/firestore_booking_repository.dart';
 import '../../domain/models/booking.dart';
 import '../../domain/repositories/booking_repository.dart';
+import 'create_booking_use_case.dart';
 
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
   return FirestoreBookingRepository(ref.watch(firestoreProvider));
@@ -24,4 +26,10 @@ final customerBookingsProvider = StreamProvider<List<Booking>>((ref) {
 final bookingDetailProvider =
     StreamProvider.family<Booking?, String>((ref, bookingId) {
   return ref.watch(bookingRepositoryProvider).watchById(bookingId);
+});
+
+/// Injectable use case — features layer must consume this, never instantiate
+/// CreateBookingUseCase or FirebaseFunctions directly.
+final createBookingUseCaseProvider = Provider<CreateBookingUseCase>((ref) {
+  return CreateBookingUseCase(FirebaseFunctions.instance);
 });

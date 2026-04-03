@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/app_theme.dart';
-import '../../application/booking/create_booking_use_case.dart';
+import '../../application/booking/booking_providers.dart';
 
 class BookingRequestSheet extends ConsumerStatefulWidget {
   const BookingRequestSheet({
@@ -61,7 +61,7 @@ class _BookingRequestSheetState extends ConsumerState<BookingRequestSheet> {
   Future<void> _submit() async {
     setState(() => _loading = true);
     try {
-      final useCase = CreateBookingUseCase(FirebaseFunctions.instance);
+      final useCase = ref.read(createBookingUseCaseProvider);
       await useCase(
         providerId: widget.providerId,
         serviceId: widget.serviceId,
