@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
@@ -94,22 +95,208 @@ class _BookingTab extends ConsumerWidget {
           return isActive
               ? _activeStatuses.contains(b.status)
               : _doneStatuses.contains(b.status);
-        }).toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        }).toList();
 
         if (filtered.isEmpty) {
           return _BookingListEmpty(isActive: isActive);
         }
 
+        // Active tab: calendar + list. Done tab: simple list.
+        if (isActive) {
+          return _ActiveBookingsWithCalendar(bookings: filtered);
+        }
+
+        filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           itemCount: filtered.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, i) {
-            return _BookingCard(booking: filtered[i]);
-          },
+          itemBuilder: (context, i) => _BookingCard(booking: filtered[i]),
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Active bookings with mini calendar
+// ---------------------------------------------------------------------------
+
+class _ActiveBookingsWithCalendar extends StatefulWidget {
+  const _ActiveBookingsWithCalendar({required this.bookings});
+  final List<Booking> bookings;
+
+  @override
+  State<_ActiveBookingsWithCalendar> createState() =>
+      _ActiveBookingsWithCalendarState();
+}
+
+class _ActiveBookingsWithCalendarState
+    extends State<_ActiveBookingsWithCalendar> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final oc = context.oc;
+
+    // Filter by selected day if any
+    var displayed = widget.bookings;
+    if (_selectedDay != null) {
+      displayed = displayed
+          .where((b) =>
+              b.scheduledAt != null && isSameDay(b.scheduledAt!, _selectedDay!))
+          .toList();
+    }
+    // Sort by scheduledAt (upcoming first), fallback to createdAt
+    displayed.sort((a, b) {
+      final aDate = a.scheduledAt ?? a.createdAt;
+      final bDate = b.scheduledAt ?? b.createdAt;
+      return aDate.compareTo(bDate);
+    });
+
+    return CustomScrollView(
+      slivers: [
+        // Mini calendar
+        SliverToBoxAdapter(
+          child: TableCalendar<Booking>(
+            locale: 'fr_FR',
+            calendarFormat: CalendarFormat.twoWeeks,
+            availableCalendarFormats: const {
+              CalendarFormat.twoWeeks: '2 sem.',
+              CalendarFormat.month: 'Mois',
+            },
+            firstDay: DateTime.now().subtract(const Duration(days: 30)),
+            lastDay: DateTime.now().add(const Duration(days: 365)),
+            focusedDay: _focusedDay,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            onDaySelected: (selected, focused) {
+              setState(() {
+                // Tap same day again → deselect
+                if (isSameDay(_selectedDay, selected)) {
+                  _selectedDay = null;
+                } else {
+                  _selectedDay = selected;
+                }
+                _focusedDay = focused;
+              });
+            },
+            onPageChanged: (focused) => _focusedDay = focused,
+            eventLoader: (day) => widget.bookings
+                .where((b) =>
+                    b.scheduledAt != null && isSameDay(b.scheduledAt!, day))
+                .toList(),
+            calendarStyle: CalendarStyle(
+              todayDecoration: BoxDecoration(
+                color: oc.primary.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              todayTextStyle: TextStyle(color: oc.primary),
+              selectedDecoration: BoxDecoration(
+                color: oc.primary,
+                shape: BoxShape.circle,
+              ),
+              markerDecoration: BoxDecoration(
+                color: oc.success,
+                shape: BoxShape.circle,
+              ),
+              markerSize: 6,
+              markersMaxCount: 3,
+            ),
+            headerStyle: HeaderStyle(
+              formatButtonVisible: true,
+              titleCentered: true,
+              formatButtonDecoration: BoxDecoration(
+                border: Border.all(color: oc.border),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              titleTextStyle: Theme.of(context).textTheme.titleSmall!,
+            ),
+          ),
+        ),
+
+        // Selected day chip
+        if (_selectedDay != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: oc.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.calendar_today,
+                            size: 14, color: oc.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          DateFormat('EEE d MMM', 'fr_FR')
+                              .format(_selectedDay!),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(
+                                color: oc.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () => setState(() => _selectedDay = null),
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: oc.primary.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.close,
+                                size: 12, color: oc.primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        // Booking list
+        if (displayed.isEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: Text(
+                  _selectedDay != null
+                      ? 'Aucune r\u00e9servation ce jour'
+                      : 'Aucune r\u00e9servation \u00e0 venir',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: oc.secondaryText),
+                ),
+              ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            sliver: SliverList.separated(
+              itemCount: displayed.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, i) =>
+                  _BookingCard(booking: displayed[i]),
+            ),
+          ),
+      ],
     );
   }
 }
