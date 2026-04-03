@@ -664,6 +664,17 @@ class _PhotoSection extends StatelessWidget {
           Image.network(
             photos.first,
             fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            loadingBuilder: (ctx, child, progress) {
+              if (progress == null) return child;
+              return Container(
+                color: ctx.oc.border,
+                child: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            },
             errorBuilder: (_, __, ___) => _Placeholder(onTap: onPick),
           ),
           Positioned(
