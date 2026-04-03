@@ -229,13 +229,13 @@ class _ServiceCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: oc.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: oc.border),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: oc.shadow,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              blurRadius: 12,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -247,7 +247,7 @@ class _ServiceCard extends StatelessWidget {
               flex: 65,
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+                  top: Radius.circular(20),
                 ),
                 child: Stack(
                   fit: StackFit.expand,
@@ -260,16 +260,37 @@ class _ServiceCard extends StatelessWidget {
                             errorBuilder: (_, __, ___) => _iconPlaceholder(oc),
                           )
                         : _iconPlaceholder(oc),
+
+                    // Soft bottom fade into card surface
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: 32,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              oc.surface.withValues(alpha: 0.55),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
                     // Category badge top-left
                     Positioned(
-                      top: 8,
-                      left: 8,
+                      top: 10,
+                      left: 10,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: oc.primary.withValues(alpha: 0.88),
-                          borderRadius: BorderRadius.circular(6),
+                          color: oc.primary,
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           _categoryLabel(service.categoryId),
@@ -292,7 +313,7 @@ class _ServiceCard extends StatelessWidget {
             Expanded(
               flex: 35,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
