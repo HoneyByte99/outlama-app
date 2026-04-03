@@ -26,7 +26,6 @@ class _ProviderCalendarPageState
     extends ConsumerState<ProviderCalendarPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  int _refreshKey = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +52,6 @@ class _ProviderCalendarPageState
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            key: ValueKey(_refreshKey),
             child: TableCalendar<Object>(
             locale: 'fr_FR',
             calendarFormat: CalendarFormat.month,
@@ -248,7 +246,10 @@ class _ProviderCalendarPageState
               .read(providerRepositoryProvider)
               .addBlockedSlot(authState.user.id, result);
           ref.invalidate(providerBlockedSlotsProvider);
-          if (mounted) setState(() => _refreshKey++);
+          // Select the blocked day to show it in the detail section
+          if (mounted) {
+            setState(() => _selectedDay = result.date);
+          }
           messenger.showSnackBar(
             const SnackBar(content: Text('Cr\u00e9neau bloqu\u00e9')),
           );
