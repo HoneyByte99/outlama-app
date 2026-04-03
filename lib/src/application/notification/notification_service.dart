@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Handles FCM token registration and foreground message display.
@@ -20,7 +21,10 @@ class NotificationService {
   final String _uid;
 
   Future<void> initialize() async {
-    // 1. Request permission (required on iOS + web; no-op on Android 12 and below)
+    // FCM on Flutter Web requires a VAPID key — skip until configured.
+    if (kIsWeb) return;
+
+    // 1. Request permission (required on iOS; no-op on Android 12 and below)
     await _messaging.requestPermission(
       alert: true,
       badge: true,
