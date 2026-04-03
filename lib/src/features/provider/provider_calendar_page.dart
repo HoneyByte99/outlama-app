@@ -6,6 +6,8 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
+import '../../application/auth/auth_providers.dart';
+import '../../application/auth/auth_state.dart';
 import '../../application/provider/provider_providers.dart';
 import '../../domain/enums/booking_status.dart';
 import '../../application/service/service_providers.dart';
@@ -185,13 +187,11 @@ class _ProviderCalendarPageState
       builder: (_) => _BlockSlotSheet(initialDate: _selectedDay),
     );
     if (result != null && mounted) {
-      final auth = ref.read(
-        currentProviderProfileProvider,
-      ).valueOrNull;
-      if (auth != null) {
+      final authState = ref.read(authNotifierProvider).valueOrNull;
+      if (authState is AuthAuthenticated) {
         await ref
             .read(providerRepositoryProvider)
-            .addBlockedSlot(auth.uid, result);
+            .addBlockedSlot(authState.user.id, result);
       }
     }
   }
@@ -251,12 +251,12 @@ class _DayDetailSliver extends ConsumerWidget {
         _BlockedSlotTile(
           slot: s,
           onDelete: () {
-            final profile =
-                ref.read(currentProviderProfileProvider).valueOrNull;
-            if (profile != null) {
+            final authState =
+                ref.read(authNotifierProvider).valueOrNull;
+            if (authState is AuthAuthenticated) {
               ref
                   .read(providerRepositoryProvider)
-                  .removeBlockedSlot(profile.uid, s.id);
+                  .removeBlockedSlot(authState.user.id, s.id);
             }
           },
         ),
