@@ -60,15 +60,16 @@ class AppShell extends ConsumerWidget {
         ? _providerNavItems(providerInboxCount)
         : _clientNavItems(clientActiveCount);
 
+    final oc = context.oc;
+
     return Scaffold(
       body: shell,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentLogical,
         onTap: onTap,
-        backgroundColor: AppColors.surface,
-        selectedItemColor:
-            isProvider ? AppColors.success : AppColors.primary,
-        unselectedItemColor: AppColors.icons,
+        backgroundColor: oc.surface,
+        selectedItemColor: isProvider ? oc.success : oc.primary,
+        unselectedItemColor: oc.icons,
         selectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
