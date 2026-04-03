@@ -10,7 +10,9 @@ import '../../domain/models/app_user.dart';
 import '../../domain/models/booking.dart';
 import '../../domain/models/chat.dart';
 import '../../domain/models/chat_message.dart';
+import '../../domain/models/phone_share.dart';
 import '../../domain/models/provider_profile.dart';
+import '../../domain/models/report.dart';
 import '../../domain/models/review.dart';
 import '../../domain/models/service.dart';
 import 'firestore_serialization.dart';
@@ -74,6 +76,27 @@ class FirestoreCollections {
     return db.collection('reviews').withConverter<Review>(
           fromFirestore: (snap, _) => _reviewFromFirestore(snap),
           toFirestore: (review, _) => _reviewToFirestore(review),
+        );
+  }
+
+  static CollectionReference<Report> reports(FirebaseFirestore db) {
+    return db.collection('reports').withConverter<Report>(
+          fromFirestore: (snap, _) => _reportFromFirestore(snap),
+          toFirestore: (report, _) => _reportToFirestore(report),
+        );
+  }
+
+  static CollectionReference<PhoneShare> phoneShares({
+    required FirebaseFirestore db,
+    required String bookingId,
+  }) {
+    return db
+        .collection('bookings')
+        .doc(bookingId)
+        .collection('phoneShares')
+        .withConverter<PhoneShare>(
+          fromFirestore: (snap, _) => _phoneShareFromFirestore(snap),
+          toFirestore: (ps, _) => _phoneShareToFirestore(ps),
         );
   }
 
@@ -341,6 +364,54 @@ class FirestoreCollections {
       'rating': review.rating,
       'comment': review.comment,
       'createdAt': dateTimeToFirestore(review.createdAt),
+    };
+  }
+
+  // ---- Report ----
+
+  static Report _reportFromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+  ) {
+    final data = snap.data() ?? const <String, dynamic>{};
+    return Report(
+      id: snap.id,
+      reporterId: (data['reporterId'] as String?) ?? '',
+      targetType: (data['targetType'] as String?) ?? 'user',
+      targetId: (data['targetId'] as String?) ?? '',
+      reason: (data['reason'] as String?) ?? '',
+      status: (data['status'] as String?) ?? 'open',
+      createdAt: dateTimeFromFirestore(data['createdAt']),
+    );
+  }
+
+  static Map<String, Object?> _reportToFirestore(Report report) {
+    return {
+      'reporterId': report.reporterId,
+      'targetType': report.targetType,
+      'targetId': report.targetId,
+      'reason': report.reason,
+      'status': report.status,
+      'createdAt': dateTimeToFirestore(report.createdAt),
+    };
+  }
+
+  // ---- PhoneShare ----
+
+  static PhoneShare _phoneShareFromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+  ) {
+    final data = snap.data() ?? const <String, dynamic>{};
+    return PhoneShare(
+      uid: snap.id,
+      phone: (data['phone'] as String?) ?? '',
+      createdAt: dateTimeFromFirestore(data['createdAt']),
+    );
+  }
+
+  static Map<String, Object?> _phoneShareToFirestore(PhoneShare ps) {
+    return {
+      'phone': ps.phone,
+      'createdAt': dateTimeToFirestore(ps.createdAt),
     };
   }
 }

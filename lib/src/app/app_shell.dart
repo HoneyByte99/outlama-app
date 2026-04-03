@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../application/auth/auth_providers.dart';
 import '../application/user/user_providers.dart';
 import '../domain/enums/active_mode.dart';
 import 'app_theme.dart';
@@ -20,6 +21,9 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Initialize FCM token registration (no-op if not yet authenticated).
+    ref.watch(notificationInitProvider);
+
     final isProvider =
         ref.watch(activeModeProvider) == ActiveMode.provider;
 

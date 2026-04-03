@@ -1,11 +1,51 @@
 import * as admin from 'firebase-admin';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import * as logger from 'firebase-functions/logger';
 import { assertAdminClaim, assertAuthenticated, requireBoolean, requireString } from './common';
 
 admin.initializeApp();
 const db = admin.firestore();
+
+// ---------------------------------------------------------------------------
+// Push notification helper
+// ---------------------------------------------------------------------------
+
+async function sendPushToUsers(
+  uids: string[],
+  notification: { title: string; body: string }
+): Promise<void> {
+  if (uids.length === 0) return;
+
+  // Fetch push tokens from user documents
+  const snapshots = await Promise.all(
+    uids.map(uid => db.collection('users').doc(uid).get())
+  );
+
+  const tokens: string[] = [];
+  for (const snap of snapshots) {
+    const token = snap.data()?.pushToken as string | undefined;
+    if (token) tokens.push(token);
+  }
+
+  if (tokens.length === 0) return;
+
+  // Send multicast
+  const result = await admin.messaging().sendEachForMulticast({
+    tokens,
+    notification: {
+      title: notification.title,
+      body: notification.body,
+    },
+    android: { priority: 'high' },
+    apns: { payload: { aps: { sound: 'default' } } },
+  });
+
+  logger.info('Push sent', {
+    successCount: result.successCount,
+    failureCount: result.failureCount,
+  });
+}
 
 type BookingStatus =
   | 'requested'
@@ -155,12 +195,107 @@ export const rejectBooking = onCall(async (request) => {
 export const onMessageCreate = onDocumentCreated(
   'chats/{chatId}/messages/{messageId}',
   async (event) => {
-    const { chatId, messageId } = event.params;
-    const message = event.data?.data();
+    const { chatId } = event.params;
+    const message = event.data?.data() as {
+      senderId?: string;
+      text?: string;
+    } | undefined;
 
-    // Placeholder for push/email notifications.
-    // Keep this side-effect minimal until notification provider is chosen.
-    logger.info('New message created', { chatId, messageId, message });
+    if (!message) return;
+
+    // Get chat to find participants
+    const chatSnap = await db.collection('chats').doc(chatId).get();
+    if (!chatSnap.exists) return;
+    const chat = chatSnap.data() as { participantIds?: string[] };
+    const participants = chat.participantIds ?? [];
+
+    // Update lastMessageAt on the chat document
+    await db.collection('chats').doc(chatId).update({
+      lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Send push to all participants except the sender
+    const recipients = participants.filter(uid => uid !== message.senderId);
+    await sendPushToUsers(recipients, {
+      title: 'Nouveau message',
+      body: message.text ?? '📎 Message reçu',
+    });
+  }
+);
+
+export const onBookingStatusChange = onDocumentUpdated(
+  'bookings/{bookingId}',
+  async (event) => {
+    const before = event.data?.before.data() as {
+      status?: string;
+      customerId?: string;
+      providerId?: string;
+    } | undefined;
+    const after = event.data?.after.data() as {
+      status?: string;
+      customerId?: string;
+      providerId?: string;
+    } | undefined;
+
+    if (!before || !after) return;
+    if (before.status === after.status) return;
+
+    const { customerId, providerId } = after;
+    const status = after.status;
+
+    logger.info('Booking status changed', { from: before.status, to: status });
+
+    const notifications: { uids: string[]; title: string; body: string }[] = [];
+
+    switch (status) {
+      case 'accepted':
+        if (customerId) {
+          notifications.push({
+            uids: [customerId],
+            title: 'Demande acceptée ✅',
+            body: 'Votre prestataire a accepté votre demande. Vous pouvez maintenant discuter.',
+          });
+        }
+        break;
+      case 'rejected':
+        if (customerId) {
+          notifications.push({
+            uids: [customerId],
+            title: 'Demande refusée',
+            body: 'Votre demande a été refusée. Vous pouvez en soumettre une nouvelle.',
+          });
+        }
+        break;
+      case 'in_progress':
+        if (customerId) {
+          notifications.push({
+            uids: [customerId],
+            title: 'Service démarré 🚀',
+            body: 'Votre prestataire a démarré le service.',
+          });
+        }
+        break;
+      case 'done':
+        if (customerId) {
+          notifications.push({
+            uids: [customerId],
+            title: 'Service terminé 🎉',
+            body: 'Le service est terminé. Laissez un avis !',
+          });
+        }
+        if (providerId) {
+          notifications.push({
+            uids: [providerId],
+            title: 'Service terminé 🎉',
+            body: 'Le service est marqué comme terminé. Laissez un avis au client !',
+          });
+        }
+        break;
+    }
+
+    for (const n of notifications) {
+      await sendPushToUsers(n.uids, { title: n.title, body: n.body });
+    }
   }
 );
 

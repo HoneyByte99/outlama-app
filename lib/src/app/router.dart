@@ -17,6 +17,7 @@ import '../features/provider/provider_dashboard_page.dart';
 import '../features/provider/provider_inbox_page.dart';
 import '../features/provider/provider_onboarding_page.dart';
 import '../features/provider/service_form_page.dart';
+import '../features/report/report_page.dart';
 import '../features/review/review_form_page.dart';
 import '../features/service/service_detail_page.dart';
 import '../features/switch_mode/switch_mode_page.dart';
@@ -47,6 +48,8 @@ abstract final class AppRoutes {
   // Parameterised helpers
   static String chat(String chatId) => '/chat/$chatId';
   static String review(String bookingId) => '/review/$bookingId';
+  static String report({required String type, required String id}) =>
+      '/report/$type/$id';
 }
 
 // ---------------------------------------------------------------------------
@@ -260,6 +263,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'review',
         builder: (_, state) => ReviewFormPage(
           bookingId: state.pathParameters['bookingId']!,
+        ),
+      ),
+
+      // ---- Report ----
+      GoRoute(
+        path: '/report/:targetType/:targetId',
+        name: 'report',
+        builder: (_, state) => ReportPage(
+          targetType: state.pathParameters['targetType']!,
+          targetId: state.pathParameters['targetId']!,
         ),
       ),
     ],

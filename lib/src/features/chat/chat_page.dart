@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/app_theme.dart';
+import '../../app/router.dart';
 import '../../application/auth/auth_providers.dart';
 import '../../application/auth/auth_state.dart';
 import '../../application/chat/chat_providers.dart';
@@ -89,6 +91,15 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         title: const Text('Chat'),
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.flag_outlined, size: 20),
+            tooltip: 'Signaler',
+            onPressed: () => context.push(
+              AppRoutes.report(type: 'message', id: widget.chatId),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [

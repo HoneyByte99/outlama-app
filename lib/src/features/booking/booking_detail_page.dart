@@ -9,6 +9,7 @@ import '../../application/auth/auth_providers.dart';
 import '../../application/auth/auth_state.dart';
 import '../../application/booking/booking_actions.dart';
 import '../../application/booking/booking_providers.dart';
+import '../../application/phone_share/phone_share_providers.dart';
 import '../../application/review/review_providers.dart';
 import '../../application/service/service_providers.dart';
 import '../../domain/enums/booking_status.dart';
@@ -66,9 +67,26 @@ class _DetailContent extends ConsumerWidget {
       }
     }
 
+    // The "other" participant we can report
+    final otherUid = uid == booking.customerId
+        ? booking.providerId
+        : booking.customerId;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Détail de la réservation')),
+      appBar: AppBar(
+        title: const Text('Détail de la réservation'),
+        actions: [
+          if (otherUid.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.flag_outlined, size: 20),
+              tooltip: 'Signaler',
+              onPressed: () => context.push(
+                AppRoutes.report(type: 'user', id: otherUid),
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: bottomBar,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -124,6 +142,20 @@ class _DetailContent extends ConsumerWidget {
             const SizedBox(height: 16),
           ],
 
+          // ---- Contact unlock ----
+          if (booking.status == BookingStatus.accepted ||
+              booking.status == BookingStatus.inProgress ||
+              booking.status == BookingStatus.done) ...[
+            _ContactSection(
+              bookingId: booking.id,
+              otherParticipantId: uid == booking.customerId
+                  ? booking.providerId
+                  : booking.customerId,
+              currentUid: uid,
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // ---- Chat CTA (when chat is unlocked) ----
           if (booking.chatId != null &&
               (booking.status == BookingStatus.accepted ||
@@ -148,6 +180,203 @@ class _DetailContent extends ConsumerWidget {
             child: _StatusTimeline(booking: booking),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Contact unlock section
+// ---------------------------------------------------------------------------
+
+class _ContactSection extends ConsumerWidget {
+  const _ContactSection({
+    required this.bookingId,
+    required this.otherParticipantId,
+    required this.currentUid,
+  });
+
+  final String bookingId;
+  final String otherParticipantId;
+  final String? currentUid;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sharesAsync = ref.watch(phoneSharesProvider(bookingId));
+    final hasSharedAsync = ref.watch(hasSharedPhoneProvider(bookingId));
+
+    // Current user's phone from auth state
+    final authState = ref.watch(authNotifierProvider).valueOrNull;
+    final myPhone = authState is AuthAuthenticated
+        ? authState.user.phoneE164
+        : null;
+
+    return sharesAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (shares) {
+        final otherShare =
+            shares.where((s) => s.uid == otherParticipantId).firstOrNull;
+        final hasShared = hasSharedAsync.valueOrNull ?? false;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Contact',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppColors.secondaryText,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 12),
+
+              // Other participant's phone
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.phone_outlined,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    otherShare?.phone ?? 'Numéro non encore partagé',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: otherShare != null
+                              ? AppColors.primaryText
+                              : AppColors.secondaryText,
+                          fontWeight: otherShare != null
+                              ? FontWeight.w500
+                              : FontWeight.w400,
+                        ),
+                  ),
+                ],
+              ),
+
+              // Share own phone CTA
+              if (!hasShared && myPhone != null) ...[
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 12),
+                _SharePhoneButton(
+                  bookingId: bookingId,
+                  uid: currentUid!,
+                  phone: myPhone,
+                ),
+              ] else if (!hasShared && myPhone == null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Ajoutez votre numéro dans votre profil pour le partager.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.secondaryText,
+                      ),
+                ),
+              ],
+
+              if (hasShared) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 14,
+                      color: AppColors.success,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Votre numéro est partagé',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.success,
+                          ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SharePhoneButton extends ConsumerStatefulWidget {
+  const _SharePhoneButton({
+    required this.bookingId,
+    required this.uid,
+    required this.phone,
+  });
+
+  final String bookingId;
+  final String uid;
+  final String phone;
+
+  @override
+  ConsumerState<_SharePhoneButton> createState() => _SharePhoneButtonState();
+}
+
+class _SharePhoneButtonState extends ConsumerState<_SharePhoneButton> {
+  bool _sharing = false;
+
+  Future<void> _share() async {
+    setState(() => _sharing = true);
+    try {
+      await ref.read(phoneShareRepositoryProvider).share(
+            bookingId: widget.bookingId,
+            uid: widget.uid,
+            phone: widget.phone,
+          );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impossible de partager le numéro.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _sharing ? null : _share,
+        icon: _sharing
+            ? const SizedBox(
+                height: 14,
+                width: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              )
+            : const Icon(Icons.phone_outlined, size: 16),
+        label: Text('Partager mon numéro (${widget.phone})'),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 44),
+          textStyle: const TextStyle(fontSize: 13),
+        ),
       ),
     );
   }
