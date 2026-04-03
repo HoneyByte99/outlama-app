@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
@@ -182,15 +184,34 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Future<void> _startRecording() async {
-    if (await _recorder.hasPermission()) {
-      final dir = await getTemporaryDirectory();
-      final path =
-          '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      await _recorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc),
-        path: path,
-      );
+    try {
+      if (kIsWeb) {
+        // On web, skip hasPermission (causes MissingPluginException with
+        // path_provider). Browser will prompt for mic access automatically.
+        await _recorder.start(
+          const RecordConfig(encoder: AudioEncoder.opus),
+          path: '',
+        );
+      } else {
+        if (!await _recorder.hasPermission()) return;
+        final dir = await getTemporaryDirectory();
+        final path =
+            '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        await _recorder.start(
+          const RecordConfig(encoder: AudioEncoder.aacLc),
+          path: path,
+        );
+      }
       setState(() => _recording = true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Impossible d\'activer le micro.'),
+            backgroundColor: context.oc.error,
+          ),
+        );
+      }
     }
   }
 
@@ -202,7 +223,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     setState(() => _sending = true);
     try {
       final media = ref.read(chatMediaServiceProvider);
-      final url = await media.uploadVoice(widget.chatId, path);
+      String url;
+      // path is a blob URL on web or file path on native — fetch bytes via HTTP
+      final response = await http.get(Uri.parse(path));
+      url = await media.uploadVoiceBytes(
+        widget.chatId,
+        response.bodyBytes,
+      );
       await _sendMedia(MessageType.voice, url);
     } catch (_) {
       if (mounted) {

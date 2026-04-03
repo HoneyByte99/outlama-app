@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,12 +40,15 @@ class ChatMediaService {
     return _uploadFile(chatId, file, 'image');
   }
 
-  /// Upload a voice recording file. Returns download URL.
-  Future<String> uploadVoice(String chatId, String filePath) async {
-    final bytes = await File(filePath).readAsBytes();
+  /// Upload voice recording bytes. Web-compatible (no dart:io dependency).
+  Future<String> uploadVoiceBytes(String chatId, Uint8List bytes) async {
+    return _uploadVoiceBytes(chatId, bytes);
+  }
+
+  Future<String> _uploadVoiceBytes(String chatId, Uint8List bytes) async {
     final ts = DateTime.now().millisecondsSinceEpoch;
-    final ref = _storage.ref('private/chats/$chatId/media/${ts}_voice.m4a');
-    await ref.putData(bytes, SettableMetadata(contentType: 'audio/mp4'));
+    final ref = _storage.ref('private/chats/$chatId/media/${ts}_voice.webm');
+    await ref.putData(bytes, SettableMetadata(contentType: 'audio/webm'));
     return ref.getDownloadURL();
   }
 
