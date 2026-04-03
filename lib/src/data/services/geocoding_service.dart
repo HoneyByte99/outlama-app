@@ -5,12 +5,18 @@ import 'package:http/http.dart' as http;
 
 /// Address suggestion from Places Autocomplete.
 class PlaceSuggestion {
-  const PlaceSuggestion({required this.placeId, required this.description});
+  const PlaceSuggestion({
+    required this.placeId,
+    required this.description,
+  });
   final String placeId;
   final String description;
 }
 
-/// Handles address autocomplete and geocoding via Google Places API.
+/// Handles address autocomplete and geocoding via Google Places API (New).
+///
+/// Uses the new `places.googleapis.com/v1` endpoints which support CORS
+/// for browser-side requests (unlike the legacy maps.googleapis.com endpoints).
 class GeocodingService {
   GeocodingService({required String apiKey}) : _apiKey = apiKey;
 
@@ -20,57 +26,59 @@ class GeocodingService {
   Future<List<PlaceSuggestion>> autocomplete(String input) async {
     if (input.trim().length < 2) return const [];
 
-    final uri = Uri.https(
-      'maps.googleapis.com',
-      '/maps/api/place/autocomplete/json',
-      {
-        'input': input,
-        'key': _apiKey,
-        'language': 'fr',
-        'types': '(regions)',
-        'components': 'country:fr|country:sn',
+    final uri = Uri.parse('https://places.googleapis.com/v1/places:autocomplete');
+
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': _apiKey,
       },
+      body: jsonEncode({
+        'input': input,
+        'languageCode': 'fr',
+        'includedRegionCodes': ['fr', 'sn'],
+      }),
     );
 
-    final response = await http.get(uri);
     if (response.statusCode != 200) return const [];
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    final predictions = json['predictions'] as List? ?? [];
+    final suggestions = json['suggestions'] as List? ?? [];
 
-    return predictions.map((p) {
-      final m = p as Map<String, dynamic>;
+    return suggestions
+        .where((s) => (s as Map)['placePrediction'] != null)
+        .map((s) {
+      final pred = s['placePrediction'] as Map<String, dynamic>;
       return PlaceSuggestion(
-        placeId: m['place_id'] as String,
-        description: m['description'] as String,
+        placeId: pred['placeId'] as String,
+        description:
+            (pred['text'] as Map<String, dynamic>)['text'] as String,
       );
     }).toList();
   }
 
-  /// Returns lat/lng for a given [placeId] via Place Details.
+  /// Returns lat/lng for a given [placeId] via Place Details (New).
   Future<({double lat, double lng})?> getPlaceLatLng(String placeId) async {
-    final uri = Uri.https(
-      'maps.googleapis.com',
-      '/maps/api/place/details/json',
-      {
-        'place_id': placeId,
-        'key': _apiKey,
-        'fields': 'geometry',
+    final uri = Uri.parse('https://places.googleapis.com/v1/places/$placeId');
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'X-Goog-Api-Key': _apiKey,
+        'X-Goog-FieldMask': 'location',
       },
     );
 
-    final response = await http.get(uri);
     if (response.statusCode != 200) return null;
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    final result = json['result'] as Map<String, dynamic>?;
-    if (result == null) return null;
+    final location = json['location'] as Map<String, dynamic>?;
+    if (location == null) return null;
 
-    final location =
-        result['geometry']['location'] as Map<String, dynamic>;
     return (
-      lat: (location['lat'] as num).toDouble(),
-      lng: (location['lng'] as num).toDouble(),
+      lat: (location['latitude'] as num).toDouble(),
+      lng: (location['longitude'] as num).toDouble(),
     );
   }
 }
