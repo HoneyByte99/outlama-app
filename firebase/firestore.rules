@@ -27,9 +27,11 @@ service cloud.firestore {
         && bookingData(bookingId).status in ["accepted", "in_progress", "done"];
     }
 
-    // ---------- USERS (private) ----------
+    // ---------- USERS ----------
+    // Any signed-in user may read profiles (needed to display provider names/avatars
+    // on service cards, chat tiles, etc.). Writes remain self-only.
     match /users/{uid} {
-      allow read: if isAdmin() || isSelf(uid);
+      allow read: if signedIn();
       allow create: if isAdmin() || isSelf(uid);
       allow update: if isAdmin() || isSelf(uid);
       allow delete: if isAdmin();
