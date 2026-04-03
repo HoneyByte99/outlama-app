@@ -140,15 +140,16 @@ class _ProviderCalendarPageState
             ),
           ),
 
-          // Day detail OR upcoming bookings
+          // Day detail (if a day is selected)
           if (_selectedDay != null)
             _DayDetailSliver(
               day: _selectedDay!,
               bookings: bookings,
               blockedSlots: blockedSlots,
-            )
-          else
-            _UpcomingBookingsSliver(bookings: bookings),
+            ),
+
+          // Always show upcoming bookings
+          _UpcomingBookingsSliver(bookings: bookings),
         ],
       ),
     );
