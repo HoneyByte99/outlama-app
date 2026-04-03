@@ -67,10 +67,13 @@ class _ServiceDetailContent extends ConsumerWidget {
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.none,
               background: service.photos.isNotEmpty
                   ? Image.network(
                       service.photos.first,
                       fit: BoxFit.cover,
+                      width: double.infinity,
+                      alignment: Alignment.center,
                       errorBuilder: (_, __, ___) => _heroFallback(oc),
                     )
                   : _heroFallback(oc),

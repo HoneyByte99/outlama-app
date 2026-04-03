@@ -254,6 +254,9 @@ class _ServiceCard extends StatelessWidget {
                     ? Image.network(
                         service.photos.first,
                         fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 110,
+                        alignment: Alignment.center,
                         errorBuilder: (_, __, ___) => _iconPlaceholder(oc),
                       )
                     : _iconPlaceholder(oc),
