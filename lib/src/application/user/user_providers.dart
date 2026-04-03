@@ -4,9 +4,9 @@ import '../../domain/enums/active_mode.dart';
 import '../auth/auth_providers.dart';
 import '../auth/auth_state.dart';
 
-/// Tracks the active mode for the current session.
-/// Initialised from the authenticated user's persisted activeMode.
-final activeModeProvider = StateProvider<ActiveMode>((ref) {
+/// Derived read-only provider — single source of truth is [AuthNotifier].
+/// To switch mode, call [AuthNotifier.switchMode] — never write here directly.
+final activeModeProvider = Provider<ActiveMode>((ref) {
   final authState = ref.watch(authNotifierProvider).valueOrNull;
   if (authState is AuthAuthenticated) return authState.user.activeMode;
   return ActiveMode.client;

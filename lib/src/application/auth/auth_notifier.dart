@@ -58,6 +58,25 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     await ref.read(firebaseAuthProvider).signOut();
   }
 
+  /// Switches the active mode for the current user.
+  /// Updates Firestore and syncs the in-memory AuthState immediately.
+  Future<void> switchMode(ActiveMode mode) async {
+    final current = state.valueOrNull;
+    if (current is! AuthAuthenticated) return;
+
+    final updated = current.user.copyWith(activeMode: mode);
+    // Optimistic local update.
+    state = AsyncData(AuthAuthenticated(updated));
+
+    try {
+      await ref.read(userRepositoryProvider).upsert(updated);
+    } catch (_) {
+      // Revert on failure.
+      state = AsyncData(current);
+      rethrow;
+    }
+  }
+
   /// Persist a user doc immediately after FirebaseAuth account creation,
   /// so displayName is set before authStateChanges fires.
   Future<void> createUserDoc({

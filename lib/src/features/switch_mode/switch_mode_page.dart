@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_theme.dart';
 import '../../application/auth/auth_providers.dart';
-import '../../application/auth/auth_state.dart';
 import '../../application/user/user_providers.dart';
 import '../../domain/enums/active_mode.dart';
 
@@ -19,8 +18,7 @@ class _SwitchModePageState extends ConsumerState<SwitchModePage> {
   bool _saving = false;
 
   Future<void> _selectMode(ActiveMode mode) async {
-    final currentMode = ref.read(activeModeProvider);
-    if (currentMode == mode) {
+    if (ref.read(activeModeProvider) == mode) {
       context.pop();
       return;
     }
@@ -28,20 +26,9 @@ class _SwitchModePageState extends ConsumerState<SwitchModePage> {
     setState(() => _saving = true);
 
     try {
-      // Update in-memory state immediately.
-      ref.read(activeModeProvider.notifier).state = mode;
-
-      // Persist to Firestore via the user repository.
-      final authState = ref.read(authNotifierProvider).valueOrNull;
-      if (authState is AuthAuthenticated) {
-        final updatedUser = authState.user.copyWith(activeMode: mode);
-        await ref.read(userRepositoryProvider).upsert(updatedUser);
-      }
-
+      await ref.read(authNotifierProvider.notifier).switchMode(mode);
       if (mounted) context.pop();
     } catch (_) {
-      // Revert on failure.
-      ref.read(activeModeProvider.notifier).state = currentMode;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
