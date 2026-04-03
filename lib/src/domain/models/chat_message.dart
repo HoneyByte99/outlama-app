@@ -6,7 +6,7 @@ class ChatMessage {
     required this.chatId,
     required this.senderId,
     required this.type,
-    required this.sentAt,
+    required this.createdAt,
     this.text,
     this.mediaUrl,
   });
@@ -15,35 +15,26 @@ class ChatMessage {
   final String chatId;
   final String senderId;
   final MessageType type;
-  final DateTime sentAt;
+  final DateTime createdAt;
   final String? text;
   final String? mediaUrl;
 
-  Map<String, Object?> toJson() {
-    return {
-      'chatId': chatId,
-      'senderId': senderId,
-      'type': type.name,
-      'sentAt': sentAt.toUtc().toIso8601String(),
-      'text': text,
-      'mediaUrl': mediaUrl,
-    };
-  }
-
-  static ChatMessage fromJson(String id, Map<String, Object?> json) {
-    final sentAtRaw = json['sentAt'];
+  ChatMessage copyWith({
+    String? chatId,
+    String? senderId,
+    MessageType? type,
+    DateTime? createdAt,
+    String? text,
+    String? mediaUrl,
+  }) {
     return ChatMessage(
       id: id,
-      chatId: (json['chatId'] as String?) ?? '',
-      senderId: (json['senderId'] as String?) ?? '',
-      type: MessageType.fromString(
-        (json['type'] as String?) ?? MessageType.text.name,
-      ),
-      sentAt: sentAtRaw is String
-          ? DateTime.parse(sentAtRaw).toUtc()
-          : DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-      text: json['text'] as String?,
-      mediaUrl: json['mediaUrl'] as String?,
+      chatId: chatId ?? this.chatId,
+      senderId: senderId ?? this.senderId,
+      type: type ?? this.type,
+      createdAt: createdAt ?? this.createdAt,
+      text: text ?? this.text,
+      mediaUrl: mediaUrl ?? this.mediaUrl,
     );
   }
 }

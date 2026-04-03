@@ -3,80 +3,70 @@ import '../enums/booking_status.dart';
 class Booking {
   const Booking({
     required this.id,
-    required this.userId,
+    required this.customerId,
+    required this.providerId,
     required this.serviceId,
-    required this.startAt,
-    required this.endAt,
     required this.status,
+    required this.requestMessage,
     required this.createdAt,
-    required this.updatedAt,
-    this.notes,
+    this.schedule,
+    this.addressSnapshot,
+    this.chatId,
+    this.acceptedAt,
+    this.rejectedAt,
+    this.cancelledAt,
+    this.startedAt,
+    this.doneAt,
   });
 
   final String id;
-  final String userId;
+  final String customerId;
+  final String providerId;
   final String serviceId;
-  final DateTime startAt;
-  final DateTime endAt;
   final BookingStatus status;
+  final String requestMessage;
+  final Map<String, Object?>? schedule;
+  final Map<String, Object?>? addressSnapshot;
+  final String? chatId;
   final DateTime createdAt;
-  final DateTime updatedAt;
-  final String? notes;
+  final DateTime? acceptedAt;
+  final DateTime? rejectedAt;
+  final DateTime? cancelledAt;
+  final DateTime? startedAt;
+  final DateTime? doneAt;
 
   Booking copyWith({
-    String? userId,
+    String? customerId,
+    String? providerId,
     String? serviceId,
-    DateTime? startAt,
-    DateTime? endAt,
     BookingStatus? status,
+    String? requestMessage,
+    Map<String, Object?>? schedule,
+    Map<String, Object?>? addressSnapshot,
+    String? chatId,
     DateTime? createdAt,
-    DateTime? updatedAt,
-    String? notes,
+    DateTime? acceptedAt,
+    DateTime? rejectedAt,
+    DateTime? cancelledAt,
+    DateTime? startedAt,
+    DateTime? doneAt,
   }) {
     return Booking(
       id: id,
-      userId: userId ?? this.userId,
+      customerId: customerId ?? this.customerId,
+      providerId: providerId ?? this.providerId,
       serviceId: serviceId ?? this.serviceId,
-      startAt: startAt ?? this.startAt,
-      endAt: endAt ?? this.endAt,
       status: status ?? this.status,
+      requestMessage: requestMessage ?? this.requestMessage,
+      schedule: schedule ?? this.schedule,
+      addressSnapshot: addressSnapshot ?? this.addressSnapshot,
+      chatId: chatId ?? this.chatId,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      notes: notes ?? this.notes,
-    );
-  }
-
-  Map<String, Object?> toJson() {
-    return {
-      'userId': userId,
-      'serviceId': serviceId,
-      'startAt': startAt.toUtc().toIso8601String(),
-      'endAt': endAt.toUtc().toIso8601String(),
-      'status': status.name,
-      'createdAt': createdAt.toUtc().toIso8601String(),
-      'updatedAt': updatedAt.toUtc().toIso8601String(),
-      'notes': notes,
-    };
-  }
-
-  static Booking fromJson(String id, Map<String, Object?> json) {
-    DateTime parseUtc(Object? raw) {
-      if (raw is String) return DateTime.parse(raw).toUtc();
-      return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-    }
-
-    return Booking(
-      id: id,
-      userId: (json['userId'] as String?) ?? '',
-      serviceId: (json['serviceId'] as String?) ?? '',
-      startAt: parseUtc(json['startAt']),
-      endAt: parseUtc(json['endAt']),
-      status: BookingStatus.fromString(
-        (json['status'] as String?) ?? BookingStatus.pending.name,
-      ),
-      createdAt: parseUtc(json['createdAt']),
-      updatedAt: parseUtc(json['updatedAt']),
-      notes: json['notes'] as String?,
+      acceptedAt: acceptedAt ?? this.acceptedAt,
+      rejectedAt: rejectedAt ?? this.rejectedAt,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
+      startedAt: startedAt ?? this.startedAt,
+      doneAt: doneAt ?? this.doneAt,
     );
   }
 }

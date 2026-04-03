@@ -1,6 +1,9 @@
+import '../models/chat.dart';
 import '../models/chat_message.dart';
 
 abstract interface class ChatRepository {
+  Stream<Chat?> watchChat(String chatId);
+
   Stream<List<ChatMessage>> watchMessages({
     required String chatId,
     int limit = 50,

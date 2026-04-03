@@ -1,82 +1,61 @@
-import '../enums/service_status.dart';
+import '../enums/category_id.dart';
+import '../enums/price_type.dart';
 
 class Service {
   const Service({
     required this.id,
-    required this.ownerId,
+    required this.providerId,
+    required this.categoryId,
     required this.title,
-    required this.status,
+    required this.photos,
+    required this.priceType,
+    required this.price,
+    required this.published,
     required this.createdAt,
     required this.updatedAt,
     this.description,
-    this.durationMinutes,
-    this.priceCents,
+    this.serviceArea,
   });
 
   final String id;
-  final String ownerId;
+  final String providerId;
+  final CategoryId categoryId;
   final String title;
   final String? description;
-  final int? durationMinutes;
-  final int? priceCents;
-  final ServiceStatus status;
+  final List<String> photos;
+  final PriceType priceType;
+  final int price;
+  final bool published;
+  final String? serviceArea;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   Service copyWith({
-    String? ownerId,
+    String? providerId,
+    CategoryId? categoryId,
     String? title,
     String? description,
-    int? durationMinutes,
-    int? priceCents,
-    ServiceStatus? status,
+    List<String>? photos,
+    PriceType? priceType,
+    int? price,
+    bool? published,
+    String? serviceArea,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return Service(
       id: id,
-      ownerId: ownerId ?? this.ownerId,
+      providerId: providerId ?? this.providerId,
+      categoryId: categoryId ?? this.categoryId,
       title: title ?? this.title,
       description: description ?? this.description,
-      durationMinutes: durationMinutes ?? this.durationMinutes,
-      priceCents: priceCents ?? this.priceCents,
-      status: status ?? this.status,
+      photos: photos ?? this.photos,
+      priceType: priceType ?? this.priceType,
+      price: price ?? this.price,
+      published: published ?? this.published,
+      serviceArea: serviceArea ?? this.serviceArea,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
-  Map<String, Object?> toJson() {
-    return {
-      'ownerId': ownerId,
-      'title': title,
-      'description': description,
-      'durationMinutes': durationMinutes,
-      'priceCents': priceCents,
-      'status': status.name,
-      'createdAt': createdAt.toUtc().toIso8601String(),
-      'updatedAt': updatedAt.toUtc().toIso8601String(),
-    };
-  }
-
-  static Service fromJson(String id, Map<String, Object?> json) {
-    DateTime parseUtc(Object? raw) {
-      if (raw is String) return DateTime.parse(raw).toUtc();
-      return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-    }
-
-    return Service(
-      id: id,
-      ownerId: (json['ownerId'] as String?) ?? '',
-      title: (json['title'] as String?) ?? '',
-      description: json['description'] as String?,
-      durationMinutes: json['durationMinutes'] as int?,
-      priceCents: json['priceCents'] as int?,
-      status: ServiceStatus.fromString(
-        (json['status'] as String?) ?? ServiceStatus.draft.name,
-      ),
-      createdAt: parseUtc(json['createdAt']),
-      updatedAt: parseUtc(json['updatedAt']),
     );
   }
 }
