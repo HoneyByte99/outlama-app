@@ -1,7 +1,11 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/app_theme.dart';
+import '../../application/auth/auth_providers.dart';
+import '../../application/auth/auth_state.dart';
+import '../../application/booking/booking_actions.dart';
 import '../../application/booking/booking_providers.dart';
 import '../../application/service/service_providers.dart';
 import '../../domain/enums/booking_status.dart';
@@ -42,9 +46,18 @@ class _DetailContent extends ConsumerWidget {
         ref.watch(serviceDetailProvider(booking.serviceId));
     final serviceTitle = serviceAsync.valueOrNull?.title ?? '---';
 
+    // Show accept/reject bar only when the current user is the provider
+    // and the booking is still in requested status.
+    final authState = ref.watch(authNotifierProvider).valueOrNull;
+    final isProvider = authState is AuthAuthenticated &&
+        authState.user.id == booking.providerId &&
+        booking.status == BookingStatus.requested;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Détail de la réservation')),
+      bottomNavigationBar:
+          isProvider ? _ProviderActionBar(booking: booking) : null,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
@@ -315,6 +328,141 @@ String _formatDateTime(DateTime dt) {
   final h = dt.hour.toString().padLeft(2, '0');
   final m = dt.minute.toString().padLeft(2, '0');
   return '${dt.day} ${months[dt.month - 1]}, $h:$m';
+}
+
+// ---------------------------------------------------------------------------
+// Provider accept / reject bottom bar
+// ---------------------------------------------------------------------------
+
+class _ProviderActionBar extends ConsumerStatefulWidget {
+  const _ProviderActionBar({required this.booking});
+
+  final Booking booking;
+
+  @override
+  ConsumerState<_ProviderActionBar> createState() => _ProviderActionBarState();
+}
+
+class _ProviderActionBarState extends ConsumerState<_ProviderActionBar> {
+  bool _loadingAccept = false;
+  bool _loadingReject = false;
+
+  Future<void> _accept() async {
+    setState(() => _loadingAccept = true);
+    try {
+      await ref.read(acceptBookingUseCaseProvider).call(widget.booking.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Demande acceptée')),
+        );
+      }
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Erreur lors de l\'acceptation.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur lors de l\'acceptation.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingAccept = false);
+    }
+  }
+
+  Future<void> _reject() async {
+    setState(() => _loadingReject = true);
+    try {
+      await ref.read(rejectBookingUseCaseProvider).call(widget.booking.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Demande refusée')),
+        );
+      }
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Erreur lors du refus.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur lors du refus.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingReject = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final busy = _loadingAccept || _loadingReject;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomPadding),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: busy ? null : _reject,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: AppColors.error),
+              ),
+              child: _loadingReject
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.error,
+                      ),
+                    )
+                  : const Text('Refuser'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: busy ? null : _accept,
+              child: _loadingAccept
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.surface,
+                      ),
+                    )
+                  : const Text('Accepter'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
