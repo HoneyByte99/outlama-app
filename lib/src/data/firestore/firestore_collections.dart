@@ -1,12 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../domain/enums/active_mode.dart';
 import '../../domain/enums/booking_status.dart';
+import '../../domain/enums/category_id.dart';
 import '../../domain/enums/message_type.dart';
-import '../../domain/enums/service_status.dart';
-import '../../domain/enums/user_role.dart';
+import '../../domain/enums/price_type.dart';
+import '../../domain/enums/reviewer_role.dart';
 import '../../domain/models/app_user.dart';
 import '../../domain/models/booking.dart';
+import '../../domain/models/chat.dart';
 import '../../domain/models/chat_message.dart';
+import '../../domain/models/provider_profile.dart';
+import '../../domain/models/review.dart';
 import '../../domain/models/service.dart';
 import 'firestore_serialization.dart';
 
@@ -17,29 +22,30 @@ class FirestoreCollections {
   const FirestoreCollections._();
 
   static CollectionReference<AppUser> users(FirebaseFirestore db) {
-    return db
-        .collection('users')
-        .withConverter<AppUser>(
+    return db.collection('users').withConverter<AppUser>(
           fromFirestore: (snap, _) => _userFromFirestore(snap),
           toFirestore: (user, _) => _userToFirestore(user),
         );
   }
 
   static CollectionReference<Service> services(FirebaseFirestore db) {
-    return db
-        .collection('services')
-        .withConverter<Service>(
+    return db.collection('services').withConverter<Service>(
           fromFirestore: (snap, _) => _serviceFromFirestore(snap),
           toFirestore: (service, _) => _serviceToFirestore(service),
         );
   }
 
   static CollectionReference<Booking> bookings(FirebaseFirestore db) {
-    return db
-        .collection('bookings')
-        .withConverter<Booking>(
+    return db.collection('bookings').withConverter<Booking>(
           fromFirestore: (snap, _) => _bookingFromFirestore(snap),
           toFirestore: (booking, _) => _bookingToFirestore(booking),
+        );
+  }
+
+  static CollectionReference<Chat> chats(FirebaseFirestore db) {
+    return db.collection('chats').withConverter<Chat>(
+          fromFirestore: (snap, _) => _chatFromFirestore(snap),
+          toFirestore: (chat, _) => _chatToFirestore(chat),
         );
   }
 
@@ -57,7 +63,21 @@ class FirestoreCollections {
         );
   }
 
-  // --- Private mapping (Firestore stores timestamps as Timestamp) ---
+  static CollectionReference<ProviderProfile> providers(FirebaseFirestore db) {
+    return db.collection('providers').withConverter<ProviderProfile>(
+          fromFirestore: (snap, _) => _providerFromFirestore(snap),
+          toFirestore: (profile, _) => _providerToFirestore(profile),
+        );
+  }
+
+  static CollectionReference<Review> reviews(FirebaseFirestore db) {
+    return db.collection('reviews').withConverter<Review>(
+          fromFirestore: (snap, _) => _reviewFromFirestore(snap),
+          toFirestore: (review, _) => _reviewToFirestore(review),
+        );
+  }
+
+  // ---- AppUser ----
 
   static AppUser _userFromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snap,
@@ -67,10 +87,13 @@ class FirestoreCollections {
       id: snap.id,
       displayName: (data['displayName'] as String?) ?? '',
       email: (data['email'] as String?) ?? '',
-      photoUrl: data['photoUrl'] as String?,
-      role: UserRole.fromString(
-        (data['role'] as String?) ?? UserRole.customer.name,
+      photoPath: data['photoPath'] as String?,
+      phoneE164: data['phoneE164'] as String?,
+      country: (data['country'] as String?) ?? 'FR',
+      activeMode: ActiveMode.fromString(
+        (data['activeMode'] as String?) ?? ActiveMode.client.name,
       ),
+      pushToken: data['pushToken'] as String?,
       createdAt: dateTimeFromFirestore(data['createdAt']),
     );
   }
@@ -79,11 +102,16 @@ class FirestoreCollections {
     return {
       'displayName': user.displayName,
       'email': user.email,
-      'photoUrl': user.photoUrl,
-      'role': user.role.name,
+      'photoPath': user.photoPath,
+      'phoneE164': user.phoneE164,
+      'country': user.country,
+      'activeMode': user.activeMode.name,
+      'pushToken': user.pushToken,
       'createdAt': dateTimeToFirestore(user.createdAt),
     };
   }
+
+  // ---- Service ----
 
   static Service _serviceFromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snap,
@@ -91,14 +119,19 @@ class FirestoreCollections {
     final data = snap.data() ?? const <String, dynamic>{};
     return Service(
       id: snap.id,
-      ownerId: (data['ownerId'] as String?) ?? '',
+      providerId: (data['providerId'] as String?) ?? '',
+      categoryId: CategoryId.fromString(
+        (data['categoryId'] as String?) ?? CategoryId.autre.name,
+      ),
       title: (data['title'] as String?) ?? '',
       description: data['description'] as String?,
-      durationMinutes: data['durationMinutes'] as int?,
-      priceCents: data['priceCents'] as int?,
-      status: ServiceStatus.fromString(
-        (data['status'] as String?) ?? ServiceStatus.draft.name,
+      photos: (data['photos'] as List?)?.cast<String>() ?? [],
+      priceType: PriceType.fromString(
+        (data['priceType'] as String?) ?? PriceType.fixed.name,
       ),
+      price: (data['price'] as int?) ?? 0,
+      published: (data['published'] as bool?) ?? false,
+      serviceArea: data['serviceArea'] as String?,
       createdAt: dateTimeFromFirestore(data['createdAt']),
       updatedAt: dateTimeFromFirestore(data['updatedAt']),
     );
@@ -106,16 +139,21 @@ class FirestoreCollections {
 
   static Map<String, Object?> _serviceToFirestore(Service service) {
     return {
-      'ownerId': service.ownerId,
+      'providerId': service.providerId,
+      'categoryId': service.categoryId.name,
       'title': service.title,
       'description': service.description,
-      'durationMinutes': service.durationMinutes,
-      'priceCents': service.priceCents,
-      'status': service.status.name,
+      'photos': service.photos,
+      'priceType': service.priceType.name,
+      'price': service.price,
+      'published': service.published,
+      'serviceArea': service.serviceArea,
       'createdAt': dateTimeToFirestore(service.createdAt),
       'updatedAt': dateTimeToFirestore(service.updatedAt),
     };
   }
+
+  // ---- Booking ----
 
   static Booking _bookingFromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snap,
@@ -123,31 +161,101 @@ class FirestoreCollections {
     final data = snap.data() ?? const <String, dynamic>{};
     return Booking(
       id: snap.id,
-      userId: (data['userId'] as String?) ?? '',
+      customerId: (data['customerId'] as String?) ?? '',
+      providerId: (data['providerId'] as String?) ?? '',
       serviceId: (data['serviceId'] as String?) ?? '',
-      startAt: dateTimeFromFirestore(data['startAt']),
-      endAt: dateTimeFromFirestore(data['endAt']),
       status: BookingStatus.fromString(
-        (data['status'] as String?) ?? BookingStatus.pending.name,
+        (data['status'] as String?) ?? BookingStatus.requested.value,
       ),
+      requestMessage: (data['requestMessage'] as String?) ?? '',
+      schedule: data['schedule'] != null
+          ? Map<String, Object?>.from(data['schedule'] as Map)
+          : null,
+      addressSnapshot: data['addressSnapshot'] != null
+          ? Map<String, Object?>.from(data['addressSnapshot'] as Map)
+          : null,
+      chatId: data['chatId'] as String?,
       createdAt: dateTimeFromFirestore(data['createdAt']),
-      updatedAt: dateTimeFromFirestore(data['updatedAt']),
-      notes: data['notes'] as String?,
+      acceptedAt: data['acceptedAt'] != null
+          ? dateTimeFromFirestore(data['acceptedAt'])
+          : null,
+      rejectedAt: data['rejectedAt'] != null
+          ? dateTimeFromFirestore(data['rejectedAt'])
+          : null,
+      cancelledAt: data['cancelledAt'] != null
+          ? dateTimeFromFirestore(data['cancelledAt'])
+          : null,
+      startedAt: data['startedAt'] != null
+          ? dateTimeFromFirestore(data['startedAt'])
+          : null,
+      doneAt:
+          data['doneAt'] != null ? dateTimeFromFirestore(data['doneAt']) : null,
     );
   }
 
   static Map<String, Object?> _bookingToFirestore(Booking booking) {
     return {
-      'userId': booking.userId,
+      'customerId': booking.customerId,
+      'providerId': booking.providerId,
       'serviceId': booking.serviceId,
-      'startAt': dateTimeToFirestore(booking.startAt),
-      'endAt': dateTimeToFirestore(booking.endAt),
-      'status': booking.status.name,
+      'status': booking.status.value,
+      'requestMessage': booking.requestMessage,
+      'schedule': booking.schedule,
+      'addressSnapshot': booking.addressSnapshot,
+      'chatId': booking.chatId,
       'createdAt': dateTimeToFirestore(booking.createdAt),
-      'updatedAt': dateTimeToFirestore(booking.updatedAt),
-      'notes': booking.notes,
+      'acceptedAt':
+          booking.acceptedAt != null
+              ? dateTimeToFirestore(booking.acceptedAt!)
+              : null,
+      'rejectedAt':
+          booking.rejectedAt != null
+              ? dateTimeToFirestore(booking.rejectedAt!)
+              : null,
+      'cancelledAt':
+          booking.cancelledAt != null
+              ? dateTimeToFirestore(booking.cancelledAt!)
+              : null,
+      'startedAt':
+          booking.startedAt != null
+              ? dateTimeToFirestore(booking.startedAt!)
+              : null,
+      'doneAt':
+          booking.doneAt != null ? dateTimeToFirestore(booking.doneAt!) : null,
     };
   }
+
+  // ---- Chat ----
+
+  static Chat _chatFromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+  ) {
+    final data = snap.data() ?? const <String, dynamic>{};
+    return Chat(
+      id: snap.id,
+      bookingId: (data['bookingId'] as String?) ?? '',
+      participantIds:
+          (data['participantIds'] as List?)?.cast<String>() ?? [],
+      createdAt: dateTimeFromFirestore(data['createdAt']),
+      lastMessageAt: data['lastMessageAt'] != null
+          ? dateTimeFromFirestore(data['lastMessageAt'])
+          : null,
+    );
+  }
+
+  static Map<String, Object?> _chatToFirestore(Chat chat) {
+    return {
+      'bookingId': chat.bookingId,
+      'participantIds': chat.participantIds,
+      'createdAt': dateTimeToFirestore(chat.createdAt),
+      'lastMessageAt':
+          chat.lastMessageAt != null
+              ? dateTimeToFirestore(chat.lastMessageAt!)
+              : null,
+    };
+  }
+
+  // ---- ChatMessage ----
 
   static ChatMessage _messageFromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snap,
@@ -160,7 +268,7 @@ class FirestoreCollections {
       type: MessageType.fromString(
         (data['type'] as String?) ?? MessageType.text.name,
       ),
-      sentAt: dateTimeFromFirestore(data['sentAt']),
+      createdAt: dateTimeFromFirestore(data['createdAt']),
       text: data['text'] as String?,
       mediaUrl: data['mediaUrl'] as String?,
     );
@@ -171,9 +279,68 @@ class FirestoreCollections {
       'chatId': message.chatId,
       'senderId': message.senderId,
       'type': message.type.name,
-      'sentAt': dateTimeToFirestore(message.sentAt),
+      'createdAt': dateTimeToFirestore(message.createdAt),
       'text': message.text,
       'mediaUrl': message.mediaUrl,
+    };
+  }
+
+  // ---- ProviderProfile ----
+
+  static ProviderProfile _providerFromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+  ) {
+    final data = snap.data() ?? const <String, dynamic>{};
+    return ProviderProfile(
+      uid: snap.id,
+      bio: data['bio'] as String?,
+      serviceArea: data['serviceArea'] as String?,
+      active: (data['active'] as bool?) ?? false,
+      suspended: (data['suspended'] as bool?) ?? false,
+      createdAt: dateTimeFromFirestore(data['createdAt']),
+    );
+  }
+
+  static Map<String, Object?> _providerToFirestore(ProviderProfile profile) {
+    return {
+      'uid': profile.uid,
+      'bio': profile.bio,
+      'serviceArea': profile.serviceArea,
+      'active': profile.active,
+      'suspended': profile.suspended,
+      'createdAt': dateTimeToFirestore(profile.createdAt),
+    };
+  }
+
+  // ---- Review ----
+
+  static Review _reviewFromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+  ) {
+    final data = snap.data() ?? const <String, dynamic>{};
+    return Review(
+      id: snap.id,
+      bookingId: (data['bookingId'] as String?) ?? '',
+      reviewerId: (data['reviewerId'] as String?) ?? '',
+      revieweeId: (data['revieweeId'] as String?) ?? '',
+      reviewerRole: ReviewerRole.fromString(
+        (data['reviewerRole'] as String?) ?? ReviewerRole.client.name,
+      ),
+      rating: (data['rating'] as int?) ?? 1,
+      comment: data['comment'] as String?,
+      createdAt: dateTimeFromFirestore(data['createdAt']),
+    );
+  }
+
+  static Map<String, Object?> _reviewToFirestore(Review review) {
+    return {
+      'bookingId': review.bookingId,
+      'reviewerId': review.reviewerId,
+      'revieweeId': review.revieweeId,
+      'reviewerRole': review.reviewerRole.name,
+      'rating': review.rating,
+      'comment': review.comment,
+      'createdAt': dateTimeToFirestore(review.createdAt),
     };
   }
 }

@@ -164,6 +164,136 @@ export const onMessageCreate = onDocumentCreated(
   }
 );
 
+export const cancelBooking = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  assertAuthenticated(uid);
+
+  const bookingId = requireString(request.data?.bookingId, 'bookingId');
+  const bookingRef = db.collection('bookings').doc(bookingId);
+
+  const result = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(bookingRef);
+    if (!snap.exists) throw new HttpsError('not-found', 'Booking not found.');
+
+    const booking = snap.data() as {
+      customerId?: string;
+      providerId?: string;
+      status?: BookingStatus;
+    };
+
+    if (!booking.customerId || !booking.providerId) {
+      throw new HttpsError('failed-precondition', 'Booking is missing required fields.');
+    }
+
+    if (booking.status !== 'requested') {
+      throw new HttpsError(
+        'failed-precondition',
+        `Booking cannot be cancelled from status=${booking.status ?? 'unknown'}.`
+      );
+    }
+
+    const isAdmin = request.auth?.token?.admin === true;
+    if (!isAdmin && booking.customerId !== uid && booking.providerId !== uid) {
+      throw new HttpsError('permission-denied', 'Only a booking participant can cancel.');
+    }
+
+    tx.update(bookingRef, {
+      status: 'cancelled' as BookingStatus,
+      cancelledAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return { bookingId };
+  });
+
+  return result;
+});
+
+export const markInProgress = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  assertAuthenticated(uid);
+
+  const bookingId = requireString(request.data?.bookingId, 'bookingId');
+  const bookingRef = db.collection('bookings').doc(bookingId);
+
+  const result = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(bookingRef);
+    if (!snap.exists) throw new HttpsError('not-found', 'Booking not found.');
+
+    const booking = snap.data() as {
+      providerId?: string;
+      status?: BookingStatus;
+    };
+
+    if (!booking.providerId) {
+      throw new HttpsError('failed-precondition', 'Booking is missing providerId.');
+    }
+
+    if (booking.status !== 'accepted') {
+      throw new HttpsError(
+        'failed-precondition',
+        `Booking is not accepted (status=${booking.status ?? 'unknown'}).`
+      );
+    }
+
+    const isAdmin = request.auth?.token?.admin === true;
+    if (!isAdmin && booking.providerId !== uid) {
+      throw new HttpsError('permission-denied', 'Only the provider can mark a booking in progress.');
+    }
+
+    tx.update(bookingRef, {
+      status: 'in_progress' as BookingStatus,
+      startedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return { bookingId };
+  });
+
+  return result;
+});
+
+export const confirmDone = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  assertAuthenticated(uid);
+
+  const bookingId = requireString(request.data?.bookingId, 'bookingId');
+  const bookingRef = db.collection('bookings').doc(bookingId);
+
+  const result = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(bookingRef);
+    if (!snap.exists) throw new HttpsError('not-found', 'Booking not found.');
+
+    const booking = snap.data() as {
+      customerId?: string;
+      status?: BookingStatus;
+    };
+
+    if (!booking.customerId) {
+      throw new HttpsError('failed-precondition', 'Booking is missing customerId.');
+    }
+
+    if (booking.status !== 'in_progress') {
+      throw new HttpsError(
+        'failed-precondition',
+        `Booking is not in_progress (status=${booking.status ?? 'unknown'}).`
+      );
+    }
+
+    const isAdmin = request.auth?.token?.admin === true;
+    if (!isAdmin && booking.customerId !== uid) {
+      throw new HttpsError('permission-denied', 'Only the client can confirm the booking as done.');
+    }
+
+    tx.update(bookingRef, {
+      status: 'done' as BookingStatus,
+      doneAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return { bookingId };
+  });
+
+  return result;
+});
+
 export const setAdminClaim = onCall(async (request) => {
   const callerUid = request.auth?.uid;
   assertAuthenticated(callerUid);

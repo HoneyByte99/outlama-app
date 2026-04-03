@@ -27,8 +27,10 @@ service cloud.firestore {
         && bookingData(bookingId).providerId == request.auth.uid;
     }
 
-    function bookingAccepted(bookingId) {
-      return bookingExists(bookingId) && bookingData(bookingId).status == "accepted";
+    /// Phone sharing is unlocked when booking status is accepted, in_progress, or done.
+    function bookingAccessible(bookingId) {
+      return bookingExists(bookingId)
+        && bookingData(bookingId).status in ["accepted", "in_progress", "done"];
     }
 
     // ---------- USERS (private) ----------
@@ -69,23 +71,20 @@ service cloud.firestore {
     match /bookings/{bookingId} {
       allow read: if isAdmin() || isBookingParticipant(bookingId);
 
-      // Create: customer creates
+      // Create: customer creates; status must start as "requested"
       allow create: if isAdmin()
-        || (signedIn() && request.resource.data.customerId == request.auth.uid);
+        || (signedIn()
+            && request.resource.data.customerId == request.auth.uid
+            && request.resource.data.status == "requested");
 
-      // Update: participants but ownership immutable
-      // NOTE: keep status transitions server-authoritative in Cloud Functions.
-      // We only allow provider to set 'accepted' (minimum viable gate).
+      // Update: participants may update non-status fields only.
+      // Status is immutable from client — all transitions via Cloud Functions.
       allow update: if isAdmin()
         || (isBookingParticipant(bookingId)
             && request.resource.data.customerId == resource.data.customerId
             && request.resource.data.providerId == resource.data.providerId
             && request.resource.data.serviceId == resource.data.serviceId
-            && (
-              request.resource.data.status == resource.data.status
-              || (request.resource.data.status == "accepted" && isBookingProvider(bookingId))
-              || (request.resource.data.status != "accepted")
-            ));
+            && request.resource.data.status == resource.data.status);
 
       allow delete: if isAdmin();
     }
@@ -99,7 +98,7 @@ service cloud.firestore {
 
       allow read: if isAdmin() || isChatParticipant();
 
-      // Create only by server/admin (recommended)
+      // Chat documents are created exclusively by the acceptBooking Cloud Function.
       allow create: if isAdmin();
       allow update: if isAdmin();
       allow delete: if isAdmin();
@@ -107,40 +106,55 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read: if isAdmin() || isChatParticipant();
 
-        // Create: only participants; senderId must match
+        // Create: only participants; senderId must match auth uid
         allow create: if isAdmin()
           || (isChatParticipant()
               && request.resource.data.senderId == request.auth.uid
               && request.resource.data.createdAt is timestamp
               && request.resource.data.text is string);
 
-        // Integrity: no edits; admin moderation only
+        // No edits; admin moderation only
         allow update: if isAdmin();
         allow delete: if isAdmin();
       }
     }
 
-    // ---------- PHONE SHARE (unlock after accept) ----------
+    // ---------- PHONE SHARE (unlock after accept or beyond) ----------
     match /bookings/{bookingId}/phoneShares/{uid} {
-      allow read: if isAdmin() || (isBookingParticipant(bookingId) && bookingAccepted(bookingId));
+      allow read: if isAdmin()
+        || (isBookingParticipant(bookingId) && bookingAccessible(bookingId));
 
       allow create: if isAdmin()
         || (isBookingParticipant(bookingId)
             && isSelf(uid)
-            && bookingAccepted(bookingId)
+            && bookingAccessible(bookingId)
             && request.resource.data.phone is string
             && request.resource.data.createdAt is timestamp);
 
       allow update: if isAdmin()
         || (isBookingParticipant(bookingId)
             && isSelf(uid)
-            && bookingAccepted(bookingId)
+            && bookingAccessible(bookingId)
             && request.resource.data.phone is string);
 
       allow delete: if isAdmin();
     }
 
-    // ---------- REPORTS (participants can create) ----------
+    // ---------- REVIEWS ----------
+    match /reviews/{reviewId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.reviewerId == request.auth.uid
+        && request.resource.data.bookingId is string
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------- REPORTS (any signed-in user can create) ----------
     match /reports/{reportId} {
       allow read: if isAdmin();
       allow create: if signedIn();
