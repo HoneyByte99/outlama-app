@@ -139,6 +139,60 @@ class _ProviderCalendarPageState
             ),
           ),
 
+          // Day selection chip — tap X to clear and show all upcoming
+          if (_selectedDay != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: oc.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.calendar_today,
+                              size: 14, color: oc.primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            DateFormat('EEE d MMM', 'fr_FR')
+                                .format(_selectedDay!),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: oc.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => _selectedDay = null),
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: oc.primary.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.close,
+                                  size: 12, color: oc.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Day detail (if a day is selected)
           if (_selectedDay != null)
             _DayDetailSliver(
