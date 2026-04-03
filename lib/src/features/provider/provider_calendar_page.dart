@@ -7,6 +7,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
 import '../../application/provider/provider_providers.dart';
+import '../../domain/enums/booking_status.dart';
 import '../../application/service/service_providers.dart';
 import '../../domain/models/blocked_slot.dart';
 import '../../domain/models/booking.dart';
@@ -139,7 +140,7 @@ class _ProviderCalendarPageState
             ),
           ),
 
-          // Day detail
+          // Day detail OR upcoming bookings
           if (_selectedDay != null)
             _DayDetailSliver(
               day: _selectedDay!,
@@ -147,18 +148,7 @@ class _ProviderCalendarPageState
               blockedSlots: blockedSlots,
             )
           else
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: Text(
-                  'Sélectionnez un jour',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: oc.secondaryText),
-                ),
-              ),
-            ),
+            _UpcomingBookingsSliver(bookings: bookings),
         ],
       ),
     );
@@ -276,6 +266,160 @@ class _DayDetailSliver extends ConsumerWidget {
       sliver: SliverList.builder(
         itemCount: items.length,
         itemBuilder: (_, i) => items[i],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Upcoming bookings — shown when no day is selected
+// ---------------------------------------------------------------------------
+
+class _UpcomingBookingsSliver extends StatelessWidget {
+  const _UpcomingBookingsSliver({required this.bookings});
+  final List<Booking> bookings;
+
+  @override
+  Widget build(BuildContext context) {
+    final oc = context.oc;
+    final now = DateTime.now();
+    final upcoming = bookings
+        .where((b) =>
+            b.scheduledAt != null &&
+            b.scheduledAt!.isAfter(now) &&
+            (b.status == BookingStatus.accepted ||
+                b.status == BookingStatus.inProgress ||
+                b.status == BookingStatus.requested))
+        .toList()
+      ..sort((a, b) => a.scheduledAt!.compareTo(b.scheduledAt!));
+
+    if (upcoming.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.event_available_outlined,
+                  size: 48, color: oc.icons),
+              const SizedBox(height: 12),
+              Text(
+                'Aucune r\u00e9servation \u00e0 venir',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: oc.secondaryText),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      sliver: SliverList.builder(
+        itemCount: upcoming.length + 1, // +1 for header
+        itemBuilder: (context, i) {
+          if (i == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                'R\u00e9servations \u00e0 venir',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            );
+          }
+          return _UpcomingBookingTile(booking: upcoming[i - 1]);
+        },
+      ),
+    );
+  }
+}
+
+class _UpcomingBookingTile extends ConsumerWidget {
+  const _UpcomingBookingTile({required this.booking});
+  final Booking booking;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final oc = context.oc;
+    final service =
+        ref.watch(serviceDetailProvider(booking.serviceId)).valueOrNull;
+    final dateFmt = DateFormat('EEE d MMM', 'fr_FR');
+    final timeFmt = DateFormat('HH:mm', 'fr_FR');
+    final dateStr = dateFmt.format(booking.scheduledAt!);
+    final timeStr = timeFmt.format(booking.scheduledAt!);
+
+    return GestureDetector(
+      onTap: () =>
+          context.push(AppRoutes.providerBookingDetail(booking.id)),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: oc.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: oc.border),
+        ),
+        child: Row(
+          children: [
+            // Date column
+            Container(
+              width: 50,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                color: oc.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    dateStr.split(' ').first.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: oc.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  Text(
+                    booking.scheduledAt!.day.toString(),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: oc.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service?.title ?? 'Service',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '\u00e0 $timeStr',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: oc.secondaryText),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 20, color: oc.icons),
+          ],
+        ),
       ),
     );
   }
