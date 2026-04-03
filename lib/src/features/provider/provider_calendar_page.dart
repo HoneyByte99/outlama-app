@@ -49,10 +49,10 @@ class _ProviderCalendarPageState
         icon: const Icon(Icons.block_outlined, size: 20),
         label: const Text('Bloquer un créneau'),
       ),
-      body: Column(
-        children: [
-          // Calendar
-          TableCalendar<Object>(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: TableCalendar<Object>(
             locale: 'fr_FR',
             calendarFormat: CalendarFormat.month,
             availableCalendarFormats: const {CalendarFormat.month: 'Mois'},
@@ -121,39 +121,44 @@ class _ProviderCalendarPageState
                 );
               },
             ),
+            ),
           ),
-          const Divider(height: 1),
+          const SliverToBoxAdapter(child: Divider(height: 1)),
 
           // Legend
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              children: [
-                _LegendDot(color: oc.primary, label: 'RDV'),
-                const SizedBox(width: 16),
-                _LegendDot(color: oc.error, label: 'Indisponible'),
-              ],
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: [
+                  _LegendDot(color: oc.primary, label: 'RDV'),
+                  const SizedBox(width: 16),
+                  _LegendDot(color: oc.error, label: 'Indisponible'),
+                ],
+              ),
             ),
           ),
 
           // Day detail
-          Expanded(
-            child: _selectedDay != null
-                ? _DayDetail(
-                    day: _selectedDay!,
-                    bookings: bookings,
-                    blockedSlots: blockedSlots,
-                  )
-                : Center(
-                    child: Text(
-                      'Sélectionnez un jour',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: oc.secondaryText),
-                    ),
-                  ),
-          ),
+          if (_selectedDay != null)
+            _DayDetailSliver(
+              day: _selectedDay!,
+              bookings: bookings,
+              blockedSlots: blockedSlots,
+            )
+          else
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Text(
+                  'Sélectionnez un jour',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: oc.secondaryText),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -205,8 +210,8 @@ class _ProviderCalendarPageState
 // Day detail — shows bookings + blocked slots for selected day
 // ---------------------------------------------------------------------------
 
-class _DayDetail extends ConsumerWidget {
-  const _DayDetail({
+class _DayDetailSliver extends ConsumerWidget {
+  const _DayDetailSliver({
     required this.day,
     required this.bookings,
     required this.blockedSlots,
@@ -235,33 +240,43 @@ class _DayDetail extends ConsumerWidget {
     }).toList();
 
     if (dayBookings.isEmpty && daySlots.isEmpty) {
-      return Center(
-        child: Text(
-          'Aucun RDV ce jour',
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(color: oc.secondaryText),
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Text(
+            'Aucun RDV ce jour',
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: oc.secondaryText),
+          ),
         ),
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      children: [
-        for (final b in dayBookings)
-          _BookingTile(booking: b),
-        for (final s in daySlots)
-          _BlockedSlotTile(slot: s, onDelete: () {
-            final profile = ref.read(currentProviderProfileProvider).valueOrNull;
+    final items = <Widget>[
+      for (final b in dayBookings) _BookingTile(booking: b),
+      for (final s in daySlots)
+        _BlockedSlotTile(
+          slot: s,
+          onDelete: () {
+            final profile =
+                ref.read(currentProviderProfileProvider).valueOrNull;
             if (profile != null) {
-              ref.read(providerRepositoryProvider).removeBlockedSlot(
-                    profile.uid,
-                    s.id,
-                  );
+              ref
+                  .read(providerRepositoryProvider)
+                  .removeBlockedSlot(profile.uid, s.id);
             }
-          }),
-      ],
+          },
+        ),
+    ];
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      sliver: SliverList.builder(
+        itemCount: items.length,
+        itemBuilder: (_, i) => items[i],
+      ),
     );
   }
 }
