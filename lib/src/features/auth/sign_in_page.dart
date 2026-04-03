@@ -94,10 +94,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                 const SizedBox(height: 16),
 
                 // ---- Logo ----
-                Image.asset(
-                  'assets/images/logo_outalma.png',
-                  height: 130,
-                ),
+                _AuthLogo(),
                 const SizedBox(height: 40),
 
                 // ---- Heading ----
@@ -197,6 +194,39 @@ class _SignInPageState extends ConsumerState<SignInPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Logo — white card wrapper in dark mode so the dark navy logo stays visible
+// ---------------------------------------------------------------------------
+
+class _AuthLogo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    final logo = Image.asset(
+      'assets/images/logo_outalma.png',
+      height: 160,
+    );
+
+    if (!isDark) return logo;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 32,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: logo,
     );
   }
 }
