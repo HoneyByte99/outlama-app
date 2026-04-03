@@ -7,6 +7,7 @@ export 'enums/reviewer_role.dart';
 export 'enums/user_role.dart';
 
 export 'models/app_user.dart';
+export 'models/blocked_slot.dart';
 export 'models/booking.dart';
 export 'models/chat.dart';
 export 'models/chat_message.dart';

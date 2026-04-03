@@ -7,6 +7,7 @@ import '../../domain/enums/message_type.dart';
 import '../../domain/enums/price_type.dart';
 import '../../domain/enums/reviewer_role.dart';
 import '../../domain/models/app_user.dart';
+import '../../domain/models/blocked_slot.dart';
 import '../../domain/models/booking.dart';
 import '../../domain/models/chat.dart';
 import '../../domain/models/chat_message.dart';
@@ -71,6 +72,20 @@ class FirestoreCollections {
     return db.collection('providers').withConverter<ProviderProfile>(
           fromFirestore: (snap, _) => _providerFromFirestore(snap),
           toFirestore: (profile, _) => _providerToFirestore(profile),
+        );
+  }
+
+  static CollectionReference<BlockedSlot> blockedSlots(
+    FirebaseFirestore db,
+    String uid,
+  ) {
+    return db
+        .collection('providers')
+        .doc(uid)
+        .collection('blocked_slots')
+        .withConverter<BlockedSlot>(
+          fromFirestore: (snap, _) => _blockedSlotFromFirestore(snap),
+          toFirestore: (slot, _) => _blockedSlotToFirestore(slot),
         );
   }
 
@@ -228,6 +243,9 @@ class FirestoreCollections {
         (data['status'] as String?) ?? BookingStatus.requested.value,
       ),
       requestMessage: (data['requestMessage'] as String?) ?? '',
+      scheduledAt: data['scheduledAt'] != null
+          ? dateTimeFromFirestore(data['scheduledAt'])
+          : null,
       schedule: data['schedule'] != null
           ? Map<String, Object?>.from(data['schedule'] as Map)
           : null,
@@ -260,6 +278,9 @@ class FirestoreCollections {
       'serviceId': booking.serviceId,
       'status': booking.status.value,
       'requestMessage': booking.requestMessage,
+      'scheduledAt': booking.scheduledAt != null
+          ? dateTimeToFirestore(booking.scheduledAt!)
+          : null,
       'schedule': booking.schedule,
       'addressSnapshot': booking.addressSnapshot,
       'chatId': booking.chatId,
@@ -375,6 +396,30 @@ class FirestoreCollections {
       'active': profile.active,
       'suspended': profile.suspended,
       'createdAt': dateTimeToFirestore(profile.createdAt),
+    };
+  }
+
+  // ---- BlockedSlot ----
+
+  static BlockedSlot _blockedSlotFromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+  ) {
+    final data = snap.data() ?? const <String, dynamic>{};
+    return BlockedSlot(
+      id: snap.id,
+      date: dateTimeFromFirestore(data['date']),
+      endDate:
+          data['endDate'] != null ? dateTimeFromFirestore(data['endDate']) : null,
+      reason: data['reason'] as String?,
+    );
+  }
+
+  static Map<String, Object?> _blockedSlotToFirestore(BlockedSlot slot) {
+    return {
+      'date': dateTimeToFirestore(slot.date),
+      'endDate':
+          slot.endDate != null ? dateTimeToFirestore(slot.endDate!) : null,
+      'reason': slot.reason,
     };
   }
 

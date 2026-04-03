@@ -6,6 +6,7 @@ import '../../application/booking/booking_providers.dart';
 import '../../application/service/service_providers.dart';
 import '../../data/repositories/firestore_provider_repository.dart';
 import '../../domain/enums/booking_status.dart';
+import '../../domain/models/blocked_slot.dart';
 import '../../domain/models/booking.dart';
 import '../../domain/models/provider_profile.dart';
 import '../../domain/models/service.dart';
@@ -75,4 +76,19 @@ final providerBookingHistoryProvider = StreamProvider<List<Booking>>((ref) {
   return ref
       .watch(bookingRepositoryProvider)
       .watchForProvider(authState.user.id);
+});
+
+/// Current provider's blocked slots.
+final providerBlockedSlotsProvider = StreamProvider<List<BlockedSlot>>((ref) {
+  final authState = ref.watch(authNotifierProvider).valueOrNull;
+  if (authState is! AuthAuthenticated) return const Stream.empty();
+  return ref
+      .watch(providerRepositoryProvider)
+      .watchBlockedSlots(authState.user.id);
+});
+
+/// Blocked slots for any provider — used by clients to check availability.
+final blockedSlotsForProviderProvider =
+    StreamProvider.family<List<BlockedSlot>, String>((ref, uid) {
+  return ref.watch(providerRepositoryProvider).watchBlockedSlots(uid);
 });

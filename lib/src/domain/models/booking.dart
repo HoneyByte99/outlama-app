@@ -9,6 +9,7 @@ class Booking {
     required this.status,
     required this.requestMessage,
     required this.createdAt,
+    this.scheduledAt,
     this.schedule,
     this.addressSnapshot,
     this.chatId,
@@ -25,6 +26,7 @@ class Booking {
   final String serviceId;
   final BookingStatus status;
   final String requestMessage;
+  final DateTime? scheduledAt;
   final Map<String, Object?>? schedule;
   final Map<String, Object?>? addressSnapshot;
   final String? chatId;
@@ -41,6 +43,7 @@ class Booking {
     String? serviceId,
     BookingStatus? status,
     String? requestMessage,
+    DateTime? scheduledAt,
     Map<String, Object?>? schedule,
     Map<String, Object?>? addressSnapshot,
     String? chatId,
@@ -58,6 +61,7 @@ class Booking {
       serviceId: serviceId ?? this.serviceId,
       status: status ?? this.status,
       requestMessage: requestMessage ?? this.requestMessage,
+      scheduledAt: scheduledAt ?? this.scheduledAt,
       schedule: schedule ?? this.schedule,
       addressSnapshot: addressSnapshot ?? this.addressSnapshot,
       chatId: chatId ?? this.chatId,

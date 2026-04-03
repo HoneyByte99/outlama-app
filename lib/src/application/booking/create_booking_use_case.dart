@@ -17,6 +17,7 @@ class CreateBookingUseCase {
     required String providerId,
     required String serviceId,
     required String requestMessage,
+    DateTime? scheduledAt,
     String? schedule,
     String? address,
   }) async {
@@ -26,6 +27,8 @@ class CreateBookingUseCase {
       'providerId': providerId,
       'serviceId': serviceId,
       'requestMessage': requestMessage,
+      if (scheduledAt != null)
+        'scheduledAt': scheduledAt.toUtc().toIso8601String(),
       if (schedule != null && schedule.isNotEmpty)
         'schedule': {'description': schedule},
       if (address != null && address.isNotEmpty)
