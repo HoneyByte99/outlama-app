@@ -68,10 +68,12 @@ class _ServiceDetailContent extends ConsumerWidget {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 color: AppColors.border,
-                child: const Icon(
-                  Icons.home_repair_service_outlined,
-                  size: 72,
-                  color: AppColors.icons,
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/logo_outalma.png',
+                    height: 100,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),

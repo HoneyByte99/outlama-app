@@ -251,11 +251,11 @@ class _ServiceCard extends StatelessWidget {
               child: Container(
                 height: 110,
                 width: double.infinity,
-                color: AppColors.border,
-                child: const Icon(
-                  Icons.home_repair_service_outlined,
+                color: AppColors.primary.withValues(alpha: 0.06),
+                child: Icon(
+                  _categoryIcon(service.categoryId),
                   size: 36,
-                  color: AppColors.icons,
+                  color: AppColors.primary.withValues(alpha: 0.4),
                 ),
               ),
             ),
@@ -314,6 +314,19 @@ class _ServiceCard extends StatelessWidget {
         return 'Jardinage';
       case CategoryId.autre:
         return 'Autre';
+    }
+  }
+
+  IconData _categoryIcon(CategoryId id) {
+    switch (id) {
+      case CategoryId.menage:
+        return Icons.cleaning_services_outlined;
+      case CategoryId.plomberie:
+        return Icons.plumbing_outlined;
+      case CategoryId.jardinage:
+        return Icons.yard_outlined;
+      case CategoryId.autre:
+        return Icons.handyman_outlined;
     }
   }
 }

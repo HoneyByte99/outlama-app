@@ -316,8 +316,8 @@ class _ServiceTile extends ConsumerWidget {
             color: AppColors.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(
-            Icons.home_repair_service_outlined,
+          child: Icon(
+            _categoryIcon(service.categoryId),
             size: 22,
             color: AppColors.primary,
           ),
@@ -358,6 +358,19 @@ class _ServiceTile extends ConsumerWidget {
         onTap: () => context.push(AppRoutes.serviceEdit(service.id)),
       ),
     );
+  }
+
+  IconData _categoryIcon(CategoryId categoryId) {
+    switch (categoryId) {
+      case CategoryId.menage:
+        return Icons.cleaning_services_outlined;
+      case CategoryId.plomberie:
+        return Icons.plumbing_outlined;
+      case CategoryId.jardinage:
+        return Icons.yard_outlined;
+      case CategoryId.autre:
+        return Icons.handyman_outlined;
+    }
   }
 }
 
