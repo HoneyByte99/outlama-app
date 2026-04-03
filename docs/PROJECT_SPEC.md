@@ -1,195 +1,291 @@
-# Outlama — PROJECT_SPEC (MVP)
+# Outalma — Spec MVP
 
-## Objectif
-Construire une marketplace **de services à domicile** (client ↔ provider) avec une **seule app** (un user peut devenir provider via un switch façon Turo) + **booking** + **chat temps réel** + **map** + **modération admin**.
-
-**Scope MVP (100–1k users, FR + SN)** : pas de paiement intégré.
-
-## Stack (décision)
-- **App**: Flutter (from scratch, design system custom)
-- **Backend**: Firebase (Auth, Firestore, Storage, Cloud Functions)
-- **Admin**: Web séparé (Next.js) + Firebase Auth + custom claims `admin`
+Marketplace de services à domicile (client ↔ provider), une seule app, France + Sénégal.
+Cibles : Android, iOS, Web — même codebase Flutter.
+Scope MVP : 100–1 000 users. Pas de paiement intégré.
 
 ---
 
-## 0) Décisions de produit (non négociables)
-1) **User multi-rôle** : un compte unique peut être client + provider. Switch UI persistant.
-2) **Booking state machine** : `requested → accepted → in_progress → done` (+ `rejected`, `cancelled`).
-3) **Chat booking-gated** : pas de chat libre. Un chat existe **uniquement après accept**.
-4) **Téléphone type BlaBlaCar** : le numéro n’est **jamais public**. Déverrouillage **après accept**.
-5) **Server-authoritative** : transitions critiques via Cloud Functions (défense en profondeur).
+## 0. Décisions produit (non négociables)
+
+1. **Un compte, deux modes.** Un utilisateur peut être client et provider. Switch UI persistant façon Turo. L'`activeMode` est stocké sur le profil user.
+
+2. **Machine d'état booking stricte.**
+   ```
+   requested → accepted    (provider: acceptBooking)
+   requested → rejected    (provider: rejectBooking)
+   requested → cancelled   (client OU provider: cancelBooking)
+   accepted  → in_progress (provider: markInProgress)
+   in_progress → done      (client: confirmDone)
+   ```
+   Pas d'annulation après accept en MVP. Pas d'autre transition directe.
+
+3. **Chat booking-gated.** Pas de messagerie libre. Un chat est créé uniquement par `acceptBooking()`. Inaccessible avant et après annulation/rejet.
+
+4. **Téléphone privé (BlaBlaCar).** Le numéro n'est jamais public. Il devient lisible pour les deux participants dès que le booking est `accepted`, et reste lisible jusqu'à `done`.
+
+5. **Server-authoritative.** Toutes les transitions de statut passent par Cloud Functions. Le client ne peut jamais écrire `status` directement.
+
+6. **Reviews bilatérales.** Après `done`, le client note le provider ET le provider note le client. Chaque booking génère au plus 2 reviews.
 
 ---
 
-## 1) UX Pillars (Uber / BlaBlaCar / Turo)
-- **Uber (simplicité)** : 3 étapes max pour booker (service → créneau/adresse → message → envoyer).
+## 1. UX Pillars
+
+- **Uber (simplicité)** : 3 étapes max pour booker — service → créneau + adresse + message → envoyer.
 - **BlaBlaCar (confiance)** : profil + avis + contact unlock après accept + reporting.
-- **Turo (switch mode)** : un switch clair « Mode Client / Mode Provider ».
-- **Map premium** : distance + ETA, route / zone, carte lisible (pas gadget).
+- **Turo (switch mode)** : un switch clair "Mode Client / Mode Provider" dans l'app.
+- **Map utile** : affichage distance + zone de service, pas de suivi live en MVP.
 
 ---
 
-## 2) Modules MVP
+## 2. Modules MVP
+
 ### Client
 - Auth + profil
 - Browse / Search services (catégories, liste, filtre simple)
-- Service detail + Map (ETA/distance)
-- Create booking request (créneau + adresse + **message libre**)
-- Booking tracking (timeline)
-- Chat (après accept)
-- Reviews (après done)
+- Service detail + zone de service
+- Créer une demande de booking (créneau + adresse + message libre)
+- Suivi booking (timeline de statuts)
+- Chat (après accept uniquement)
+- Laisser un avis (après done)
 
 ### Provider
-- Activation provider (sans approval)
-- CRUD services (photos, zone, prix de base)
+- Activation du mode provider (sans validation externe)
+- CRUD services (photos, zone, prix)
 - Inbox de demandes + accept/reject
-- Gestion bookings (in progress/history)
+- Marquer un booking en cours (in_progress)
+- Gestion bookings (actifs + historique)
 - Chat (par booking)
+- Laisser un avis sur le client (après done)
 
-### Admin (web)
-- Suspend provider / service
-- Voir bookings (lecture)
-- Modération messages (delete) + reports
+### Admin (web — hors scope app mobile)
+- Suspendre un provider ou un service
+- Lire les bookings
+- Supprimer un message (modération)
+- Gérer les reports
 
 ---
 
-## 3) Flows (MVP)
-### 3.1 Flow Client (happy path)
-```mermaid
-sequenceDiagram
-  participant C as Client
-  participant App as App
-  participant CF as Cloud Functions
-  participant FS as Firestore
+## 3. Flows
 
-  C->>App: Browse/Search
-  App->>FS: Query services (published)
-  C->>App: Service detail + Map
-  C->>App: Request booking (slot + address + message)
-  App->>CF: createBooking()
-  CF->>FS: bookings/{id} status=requested
-  CF->>FS: notify provider
-  C->>App: Attendre réponse
-  CF->>FS: booking status=accepted
-  CF->>FS: create chat + phoneShares
-  App-->>C: Chat unlocked + contact unlocked
+### Flow client (happy path)
+```
+Browse/Search
+  → Service detail
+  → Booking request (message + créneau + adresse)
+  → [CF] createBooking → status=requested
+  → Attente réponse provider
+  → [CF] acceptBooking → status=accepted + chat créé
+  → Chat ouvert + contact déverrouillé
+  → [CF] markInProgress → status=in_progress
+  → [CF] confirmDone → status=done
+  → Laisser un avis
 ```
 
-### 3.2 Flow Provider
-```mermaid
-sequenceDiagram
-  participant P as Provider
-  participant App as App
-  participant CF as Cloud Functions
-  participant FS as Firestore
-
-  P->>App: Voir demandes
-  App->>FS: Query bookings where providerId==P
-  P->>App: Accept/Reject
-  App->>CF: acceptBooking()/rejectBooking()
-  CF->>FS: Update status + timestamps
-  CF->>FS: Create chat (on accept)
-  CF->>FS: Notify client
+### Flow provider
+```
+Inbox → Voir demande
+  → acceptBooking() ou rejectBooking()
+  → (si accept) Chat + coordonnées client visibles
+  → Marquer "en cours" → markInProgress()
+  → Client confirme done → status=done
+  → Laisser un avis sur le client
 ```
 
 ---
 
-## 4) Data model Firestore (décision)
-> Pivot = **bookings** top-level + **chats/messages**.
+## 4. Schéma Firestore
 
-### 4.1 Collections
-#### `users/{uid}`
-- `displayName`, `photoPath`
-- `country` (FR|SN), `phoneE164` (privé)
-- `activeMode` (client|provider)
+### `users/{uid}`
+| Champ | Type | Notes |
+|---|---|---|
+| `displayName` | String | Nom public |
+| `email` | String | Sync depuis Firebase Auth |
+| `photoPath` | String? | Chemin Firebase Storage (pas d'URL) |
+| `phoneE164` | String? | Privé — jamais exposé publiquement |
+| `country` | String | "FR" ou "SN" |
+| `activeMode` | String | "client" ou "provider" |
+| `pushToken` | String? | Token FCM pour les notifications |
+| `createdAt` | Timestamp | UTC |
 
-#### `providers/{uid}`
-- `active` (bool), `suspended` (bool)
-- `bio`, `serviceArea` (ville / zone)
+### `providers/{uid}`
+Même UID que `users/{uid}`. Créé quand l'utilisateur active le mode provider.
 
-#### `services/{serviceId}` (public read)
-- `providerId`
-- `title`, `description`, `categoryId`
-- `priceType` (hourly|fixed), `price`
-- `photos[]`, `published` (bool)
+| Champ | Type | Notes |
+|---|---|---|
+| `bio` | String? | Présentation courte |
+| `serviceArea` | String? | Ville ou zone d'intervention |
+| `active` | bool | Profil provider actif |
+| `suspended` | bool | Mis par admin — désactive le provider |
+| `createdAt` | Timestamp | UTC |
 
-#### `bookings/{bookingId}`
-- `customerId`, `providerId`, `serviceId`
-- `status` enum
-- `requestMessage` (string)
-- `schedule` (timestamp/slot)
-- `addressSnapshot` (struct)
-- `createdAt`, `acceptedAt`, `doneAt`
-- `chatId` (set à accept)
+### `services/{serviceId}`
+Lecture publique.
 
-#### `chats/{chatId}`
-- `bookingId`
-- `participantIds: [customerId, providerId]`
-- `createdAt`, `lastMessageAt`
+| Champ | Type | Notes |
+|---|---|---|
+| `providerId` | String | UID du provider |
+| `categoryId` | String | Voir catégories ci-dessous |
+| `title` | String | Titre du service |
+| `description` | String? | Description complète |
+| `photos` | List\<String\> | Chemins Firebase Storage |
+| `priceType` | String | "hourly" ou "fixed" |
+| `price` | int | En centimes |
+| `published` | bool | Seuls les services publiés sont visibles |
+| `serviceArea` | String? | Ville ou zone |
+| `createdAt` | Timestamp | UTC |
+| `updatedAt` | Timestamp | UTC |
 
-#### `chats/{chatId}/messages/{messageId}`
-- `senderId`
-- `type` (text|image)
-- `text` (string)
-- `createdAt`
+**Catégories MVP (valeurs de `categoryId`) :**
+- `menage` — Ménage & entretien
+- `plomberie` — Plomberie
+- `jardinage` — Jardinage & extérieur
+- `autre` — Autre service
 
-#### `bookings/{bookingId}/phoneShares/{uid}` (unlock contact)
-- docId = uid du propriétaire
-- `phone` (string), `createdAt`
+### `bookings/{bookingId}`
+Collection racine (pas de sous-collection).
 
-#### `reports/{reportId}`
-- `reporterId`, `targetType`, `targetId`, `reason`, `createdAt`, `status`
+| Champ | Type | Notes |
+|---|---|---|
+| `customerId` | String | UID du client |
+| `providerId` | String | UID du provider |
+| `serviceId` | String | Référence au service |
+| `status` | String | Voir machine d'état section 0 |
+| `requestMessage` | String | Message libre du client |
+| `schedule` | Map? | Créneau souhaité (champ libre MVP) |
+| `addressSnapshot` | Map? | Adresse du client au moment du booking |
+| `chatId` | String? | Défini par `acceptBooking()` |
+| `createdAt` | Timestamp | UTC |
+| `acceptedAt` | Timestamp? | Défini par `acceptBooking()` |
+| `rejectedAt` | Timestamp? | Défini par `rejectBooking()` |
+| `cancelledAt` | Timestamp? | Défini par `cancelBooking()` |
+| `startedAt` | Timestamp? | Défini par `markInProgress()` |
+| `doneAt` | Timestamp? | Défini par `confirmDone()` |
+
+### `chats/{chatId}`
+Créé exclusivement par `acceptBooking()`. ID dérivé : `chat_{bookingId}`.
+
+| Champ | Type | Notes |
+|---|---|---|
+| `bookingId` | String | Booking parent |
+| `participantIds` | List\<String\> | [customerId, providerId] |
+| `createdAt` | Timestamp | UTC |
+| `lastMessageAt` | Timestamp? | Mis à jour à chaque message |
+
+### `chats/{chatId}/messages/{messageId}`
+| Champ | Type | Notes |
+|---|---|---|
+| `chatId` | String | Dénormalisé pour éviter les requêtes parent |
+| `senderId` | String | UID de l'expéditeur |
+| `type` | String | "text" ou "image" |
+| `text` | String? | Présent si type=text |
+| `mediaUrl` | String? | URL Storage si type=image |
+| `createdAt` | Timestamp | UTC |
+
+### `reviews/{reviewId}`
+| Champ | Type | Notes |
+|---|---|---|
+| `bookingId` | String | Booking concerné |
+| `reviewerId` | String | UID de l'auteur |
+| `revieweeId` | String | UID de la personne notée |
+| `reviewerRole` | String | "client" ou "provider" |
+| `rating` | int | 1 à 5 |
+| `comment` | String? | Texte libre |
+| `createdAt` | Timestamp | UTC |
+
+Un booking génère au plus 2 documents review (un par sens).
+
+### `bookings/{bookingId}/phoneShares/{uid}`
+| Champ | Type | Notes |
+|---|---|---|
+| `phone` | String | Format E164 |
+| `createdAt` | Timestamp | UTC |
+
+L'ID du document est le UID de l'utilisateur dont le numéro est partagé.
+Lisible par les participants dès que `status ∈ {accepted, in_progress, done}`.
+
+### `reports/{reportId}`
+| Champ | Type | Notes |
+|---|---|---|
+| `reporterId` | String | UID du signaleur |
+| `targetType` | String | "user", "service" ou "message" |
+| `targetId` | String | ID de la ressource signalée |
+| `reason` | String | Texte libre |
+| `status` | String | "open", "resolved" ou "dismissed" |
+| `createdAt` | Timestamp | UTC |
 
 ---
 
-## 5) Security model (principes)
-- **Deny by default**.
-- `services`: read public; write = owner provider.
-- `bookings`: read = customer/provider.
-- `chats/messages`: read/write uniquement si `uid ∈ participantIds`.
-- `phoneShares`: lisible uniquement si booking `accepted`.
-- `admin`: uniquement via **custom claims** `request.auth.token.admin == true`.
+## 5. Modèle de sécurité
 
-> Les règles complètes v1 sont dans `firebase/firestore.rules` et `firebase/storage.rules` (à ajouter au repo).
+Deny-by-default. Règles complètes dans `firebase/firestore.rules`.
 
----
-
-## 6) Cloud Functions (MVP minimal)
-### Callable/HTTP
-- `createBooking(serviceId, schedule, addressSnapshot, requestMessage)`
-- `acceptBooking(bookingId)` / `rejectBooking(bookingId)`
-- `cancelBooking(bookingId)` (selon statut)
-
-### Triggers
-- `onMessageCreate` → notif à l’autre participant + anti-spam
-- `onBookingStatusChange` → notif
-
-### Admin
-- `setAdminClaim(uid)`
-- `suspendProvider(uid)` / `removeService(serviceId)` / `deleteMessage(chatId, messageId)`
+| Collection | Règle |
+|---|---|
+| `users` | Lecture/écriture = soi-même ou admin |
+| `providers` | Lecture publique ; écriture = soi-même ou admin |
+| `services` | Lecture publique ; écriture = provider owner ou admin |
+| `bookings` | Lecture = participants ou admin ; **statut non modifiable par le client** — Cloud Functions seulement |
+| `chats` | Lecture/écriture = participants ou admin ; création par Cloud Function uniquement |
+| `chats/messages` | Lecture = participants ; création = participant authentifié (senderId = uid) |
+| `phoneShares` | Lisible si `status ∈ {accepted, in_progress, done}` et participant |
+| `reviews` | Lecture publique ; création = reviewer authentifié, une fois par sens par booking |
+| `reports` | Création = tout utilisateur authentifié ; lecture/modération = admin |
 
 ---
 
-## 7) Roadmap
-### Sprint 0 (Foundation)
-- Firebase projects dev/staging/prod
-- Firestore/Storage rules v1 + tests manuels 2 comptes
-- Auth + profil + switch mode
-- Skeleton UI + design tokens
+## 6. Cloud Functions
 
-### Sprint 1 (Core)
-- CRUD service provider + listing client
-- Booking request + accept/reject (Functions)
-- Booking screens (client/provider)
+### Callable (client → server)
 
-### Sprint 2 (Chat + polish)
-- Chat temps réel (post-accept) + notifications
-- Contact unlock
-- Reports + modération admin minimal
+| Fonction | Déclencheur | Préconditions | Effet |
+|---|---|---|---|
+| `createBooking(providerId, serviceId, requestMessage, schedule?, addressSnapshot?)` | Client | Auth requis | Crée booking status=requested |
+| `acceptBooking(bookingId)` | Provider | status=requested, appelant=provider | status=accepted, crée chat, set chatId + acceptedAt |
+| `rejectBooking(bookingId)` | Provider | status=requested, appelant=provider | status=rejected, set rejectedAt |
+| `cancelBooking(bookingId)` | Client ou Provider | status=requested, appelant=participant | status=cancelled, set cancelledAt |
+| `markInProgress(bookingId)` | Provider | status=accepted, appelant=provider | status=in_progress, set startedAt |
+| `confirmDone(bookingId)` | Client | status=in_progress, appelant=client | status=done, set doneAt |
+| `setAdminClaim(uid, admin)` | Admin | Appelant=admin | Pose ou retire le custom claim admin |
+
+### Triggers Firestore
+
+| Trigger | Événement | Effet |
+|---|---|---|
+| `onMessageCreate` | `chats/{chatId}/messages/{messageId}` créé | Notif push à l'autre participant ; met à jour `lastMessageAt` sur le chat |
+| `onBookingStatusChange` | `bookings/{bookingId}` mis à jour (status change) | Notif push au participant concerné selon la transition |
+
+### Admin callable
+
+| Fonction | Effet |
+|---|---|
+| `suspendProvider(uid)` | Set `providers/{uid}.suspended=true` |
+| `removeService(serviceId)` | Set `services/{serviceId}.published=false` |
+| `deleteMessage(chatId, messageId)` | Supprime le message (modération) |
 
 ---
 
-## 8) Open questions (à figer avant dev UI)
-- Services initiaux (3 catégories MVP)
-- Politique annulation MVP
-- Map: simple ETA/distance vs suivi live (on reste simple en MVP)
+## 7. Stack technique
+
+| Couche | Choix |
+|---|---|
+| App | Flutter (Android + iOS + Web) |
+| State management | Riverpod |
+| Navigation | GoRouter |
+| Backend | Firebase (Auth, Firestore, Storage, Cloud Functions Gen2) |
+| Functions runtime | Node 20 / TypeScript |
+| Admin | Web séparé (Next.js) — hors scope app mobile MVP |
+
+---
+
+## 8. Hors scope MVP
+
+- Paiement intégré (Stripe, mobile money)
+- Vérification d'identité (KYC)
+- Géolocalisation temps réel
+- IA et recommandations
+- Abonnements premium
+- Croissance, referrals, promotions
+- Admin avancé (analytics, bulk actions)
+- Multi-langue (français en priorité, wolof/anglais post-MVP)
