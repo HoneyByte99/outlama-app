@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -46,8 +48,10 @@ class NotificationService {
   /// Call this to display an in-app SnackBar for foreground messages.
   /// Pass a [messengerKey] whose current state is looked up synchronously
   /// inside the listener (avoids async BuildContext warnings).
-  static void listenForeground(GlobalKey<ScaffoldMessengerState> messengerKey) {
-    FirebaseMessaging.onMessage.listen((message) {
+  /// Returns the subscription so the caller can cancel it on dispose.
+  static StreamSubscription<RemoteMessage> listenForeground(
+      GlobalKey<ScaffoldMessengerState> messengerKey) {
+    return FirebaseMessaging.onMessage.listen((message) {
       final notification = message.notification;
       if (notification == null) return;
       final title = notification.title ?? '';

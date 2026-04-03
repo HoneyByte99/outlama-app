@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,11 +19,18 @@ class OutlamaApp extends ConsumerStatefulWidget {
 
 class _OutlamaAppState extends ConsumerState<OutlamaApp> {
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+  StreamSubscription<RemoteMessage>? _messageSub;
 
   @override
   void initState() {
     super.initState();
-    NotificationService.listenForeground(_messengerKey);
+    _messageSub = NotificationService.listenForeground(_messengerKey);
+  }
+
+  @override
+  void dispose() {
+    _messageSub?.cancel();
+    super.dispose();
   }
 
   @override

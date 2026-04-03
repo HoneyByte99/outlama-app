@@ -120,6 +120,23 @@ class RouterNotifier extends ChangeNotifier {
 }
 
 // ---------------------------------------------------------------------------
+// Stable branch navigator keys (module-level so they never change identity)
+// ---------------------------------------------------------------------------
+
+final _shellNavigatorHomeKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellHome');
+final _shellNavigatorBookingsKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellBookings');
+final _shellNavigatorProviderKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellProvider');
+final _shellNavigatorInboxKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellInbox');
+final _shellNavigatorChatsKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellChats');
+final _shellNavigatorProfileKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellProfile');
+
+// ---------------------------------------------------------------------------
 // Router provider
 // ---------------------------------------------------------------------------
 
@@ -176,6 +193,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         branches: [
           // Branch 0 — Client: Home
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorHomeKey,
             routes: [
               GoRoute(
                 path: AppRoutes.home,
@@ -187,6 +205,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // Branch 1 — Client: Bookings
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorBookingsKey,
             routes: [
               GoRoute(
                 path: AppRoutes.bookings,
@@ -207,6 +226,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // Branch 2 — Provider: Dashboard
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorProviderKey,
             routes: [
               GoRoute(
                 path: AppRoutes.providerHome,
@@ -218,6 +238,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // Branch 3 — Provider: Inbox
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorInboxKey,
             routes: [
               GoRoute(
                 path: AppRoutes.providerInbox,
@@ -238,6 +259,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // Branch 4 — Chats (shared between client and provider modes)
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorChatsKey,
             routes: [
               GoRoute(
                 path: AppRoutes.chatsList,
@@ -249,6 +271,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // Branch 5 — Profile & Settings (shared between client and provider)
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorProfileKey,
             routes: [
               GoRoute(
                 path: AppRoutes.profile,
