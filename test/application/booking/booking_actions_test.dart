@@ -6,9 +6,11 @@ import 'package:outlama_app/src/application/booking/booking_actions.dart';
 // Shared fakes (same pattern as create_booking_use_case_test)
 // ---------------------------------------------------------------------------
 
-class _FakeCallableResult implements HttpsCallableResult<void> {
+class _FakeCallableResult<T> implements HttpsCallableResult<T> {
+  _FakeCallableResult(this._data);
+  final T _data;
   @override
-  void get data => null;
+  T get data => _data;
 }
 
 class _FakeCallable extends Fake implements HttpsCallable {
@@ -22,7 +24,7 @@ class _FakeCallable extends Fake implements HttpsCallable {
   Future<HttpsCallableResult<T>> call<T>([dynamic parameters]) async {
     capturedPayload = parameters as Map<String, Object?>?;
     if (shouldThrow != null) throw shouldThrow!;
-    return _FakeCallableResult() as HttpsCallableResult<T>;
+    return _FakeCallableResult<T>(null as T);
   }
 }
 
