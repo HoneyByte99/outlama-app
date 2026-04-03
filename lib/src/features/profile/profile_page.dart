@@ -34,7 +34,7 @@ class ProfilePage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (user != null) _EditableUserHeader(user: user),
+            const _EditableUserHeader(),
             const SizedBox(height: 28),
             const _SectionLabel(label: 'Mode actif'),
             const SizedBox(height: 12),
@@ -65,9 +65,7 @@ class ProfilePage extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _EditableUserHeader extends ConsumerStatefulWidget {
-  const _EditableUserHeader({required this.user});
-
-  final AppUser user;
+  const _EditableUserHeader();
 
   @override
   ConsumerState<_EditableUserHeader> createState() =>
@@ -78,21 +76,20 @@ class _EditableUserHeaderState extends ConsumerState<_EditableUserHeader> {
   bool _uploading = false;
 
   Future<void> _pickAvatar() async {
+    // Read current user at call time — don't depend on widget prop
+    final authState = ref.read(authNotifierProvider).valueOrNull;
+    if (authState is! AuthAuthenticated) return;
+
     final service = ref.read(avatarUploadServiceProvider);
     if (service == null) return;
 
     setState(() => _uploading = true);
     try {
       final url = await service.pickAndUpload();
-      if (url == null) {
-        // user cancelled — nothing to do
-        return;
-      }
+      if (url == null) return; // user cancelled
 
-      await ref
-          .read(authNotifierProvider.notifier)
-          .updateProfile(
-            displayName: widget.user.displayName,
+      await ref.read(authNotifierProvider.notifier).updateProfile(
+            displayName: authState.user.displayName,
             photoPath: url,
           );
     } catch (e) {
@@ -113,7 +110,13 @@ class _EditableUserHeaderState extends ConsumerState<_EditableUserHeader> {
   @override
   Widget build(BuildContext context) {
     final oc = context.oc;
-    final user = widget.user;
+    // Watch directly — always fresh, no prop-timing race condition
+    final authAsync = ref.watch(authNotifierProvider);
+    final user = authAsync.valueOrNull is AuthAuthenticated
+        ? (authAsync.valueOrNull as AuthAuthenticated).user
+        : null;
+
+    if (user == null) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -139,6 +142,7 @@ class _EditableUserHeaderState extends ConsumerState<_EditableUserHeader> {
                         ),
                       )
                     : UserAvatar(
+                        key: ValueKey(user.photoPath),
                         displayName: user.displayName,
                         photoPath: user.photoPath,
                         radius: 30,
