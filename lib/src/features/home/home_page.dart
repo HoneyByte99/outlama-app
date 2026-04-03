@@ -226,90 +226,94 @@ class _ServiceCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => context.push(AppRoutes.serviceDetail(service.id)),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          fit: StackFit.expand,
+      child: Container(
+        decoration: BoxDecoration(
+          color: oc.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: oc.border),
+          boxShadow: [
+            BoxShadow(
+              color: oc.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Full-bleed image (or icon fallback)
-            service.photos.isNotEmpty
-                ? Image.network(
-                    service.photos.first,
-                    fit: BoxFit.cover,
-                    alignment: Alignment.center,
-                    errorBuilder: (_, __, ___) => _iconPlaceholder(oc),
-                  )
-                : _iconPlaceholder(oc),
-
-            // Gradient overlay — dark at bottom, transparent at top
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.35, 1.0],
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.72),
+            // Image — 65% of card height
+            Expanded(
+              flex: 65,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    service.photos.isNotEmpty
+                        ? Image.network(
+                            service.photos.first,
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                            errorBuilder: (_, __, ___) => _iconPlaceholder(oc),
+                          )
+                        : _iconPlaceholder(oc),
+                    // Category badge top-left
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: oc.primary.withValues(alpha: 0.88),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          _categoryLabel(service.categoryId),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
 
-            // Category badge — top-left
-            Positioned(
-              top: 10,
-              left: 10,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: oc.primary.withValues(alpha: 0.88),
-                  borderRadius: BorderRadius.circular(6),
+            // Info section — 35% of card height
+            Expanded(
+              flex: 35,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      service.title,
+                      style: Theme.of(context).textTheme.titleSmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      priceLabel,
+                      style:
+                          Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: oc.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  _categoryLabel(service.categoryId),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-            ),
-
-            // Title + price — bottom
-            Positioned(
-              left: 10,
-              right: 10,
-              bottom: 12,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    service.title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          shadows: [
-                            const Shadow(
-                              blurRadius: 4,
-                              color: Colors.black54,
-                            ),
-                          ],
-                        ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    priceLabel,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                ],
               ),
             ),
           ],
