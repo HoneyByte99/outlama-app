@@ -110,6 +110,22 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
     }
   }
 
+  Future<void> _editZone(int index) async {
+    final updated = await showModalBottomSheet<ServiceZone>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _AddZoneSheet(
+        geocoding: ref.read(geocodingServiceProvider),
+        existing: _zones[index],
+      ),
+    );
+    if (updated != null && mounted) {
+      setState(() {
+        _zones = [..._zones]..[index] = updated;
+      });
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -182,22 +198,24 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => context.pop(),
         ),
-        actions: [
-          if (_saving)
-            const Padding(
-              padding: EdgeInsets.all(14),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          else
-            TextButton(
-              onPressed: _save,
-              child: const Text('Enregistrer'),
-            ),
-        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+          child: ElevatedButton(
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(_isEdit ? 'Enregistrer' : 'Créer le service'),
+          ),
+        ),
       ),
       body: SafeArea(
         child: Form(
@@ -292,6 +310,7 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
               _ZonesSection(
                 zones: _zones,
                 onRemove: _removeZone,
+                onEdit: _editZone,
                 onAdd: _showAddZoneSheet,
               ),
               const SizedBox(height: 24),
@@ -352,11 +371,13 @@ class _ZonesSection extends StatelessWidget {
   const _ZonesSection({
     required this.zones,
     required this.onRemove,
+    required this.onEdit,
     required this.onAdd,
   });
 
   final List<ServiceZone> zones;
   final void Function(int index) onRemove;
+  final void Function(int index) onEdit;
   final VoidCallback onAdd;
 
   @override
@@ -377,7 +398,11 @@ class _ZonesSection extends StatelessWidget {
             ),
           ),
         for (var i = 0; i < zones.length; i++) ...[
-          _ZoneChip(zone: zones[i], onRemove: () => onRemove(i)),
+          _ZoneChip(
+            zone: zones[i],
+            onTap: () => onEdit(i),
+            onRemove: () => onRemove(i),
+          ),
           const SizedBox(height: 8),
         ],
         SizedBox(
@@ -398,16 +423,23 @@ class _ZonesSection extends StatelessWidget {
 }
 
 class _ZoneChip extends StatelessWidget {
-  const _ZoneChip({required this.zone, required this.onRemove});
+  const _ZoneChip({
+    required this.zone,
+    required this.onTap,
+    required this.onRemove,
+  });
 
   final ServiceZone zone;
+  final VoidCallback onTap;
   final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
     final oc = context.oc;
     final subtitle = zone.radiusKm > 0 ? '${zone.radiusKm} km' : null;
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: oc.surface,
@@ -445,6 +477,7 @@ class _ZoneChip extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -454,21 +487,37 @@ class _ZoneChip extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _AddZoneSheet extends StatefulWidget {
-  const _AddZoneSheet({required this.geocoding});
+  const _AddZoneSheet({required this.geocoding, this.existing});
 
   final GeocodingService geocoding;
+  final ServiceZone? existing;
 
   @override
   State<_AddZoneSheet> createState() => _AddZoneSheetState();
 }
 
 class _AddZoneSheetState extends State<_AddZoneSheet> {
-  final _addressController = TextEditingController();
-  double _radiusKm = 30;
+  late final TextEditingController _addressController;
+  late double _radiusKm;
   bool _loading = false;
   String? _error;
   List<PlaceSuggestion> _suggestions = [];
   PlaceSuggestion? _selected;
+
+  bool get _isEdit => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    _addressController = TextEditingController(text: e?.label ?? '');
+    _radiusKm = e?.radiusKm.toDouble() ?? 30;
+    // For editing, we already have coords — create a fake PlaceSuggestion
+    // so _validate can reuse existing coords if the label hasn't changed.
+    if (e != null) {
+      _selected = PlaceSuggestion(placeId: '', description: e.label);
+    }
+  }
 
   @override
   void dispose() {
@@ -501,6 +550,18 @@ class _AddZoneSheetState extends State<_AddZoneSheet> {
   Future<void> _validate() async {
     if (_selected == null) {
       setState(() => _error = 'Sélectionnez une adresse dans les suggestions');
+      return;
+    }
+
+    // Edit mode: if label unchanged, reuse existing coords (only radius changed)
+    final e = widget.existing;
+    if (e != null && _selected!.description == e.label) {
+      Navigator.of(context).pop(ServiceZone(
+        label: e.label,
+        latitude: e.latitude,
+        longitude: e.longitude,
+        radiusKm: _radiusKm.round(),
+      ));
       return;
     }
 
@@ -565,7 +626,7 @@ class _AddZoneSheetState extends State<_AddZoneSheet> {
           const SizedBox(height: 16),
 
           Text(
-            'Ajouter une zone',
+            _isEdit ? 'Modifier la zone' : 'Ajouter une zone',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 16),
@@ -687,7 +748,7 @@ class _AddZoneSheetState extends State<_AddZoneSheet> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Valider'),
+                  : Text(_isEdit ? 'Modifier' : 'Valider'),
             ),
           ),
         ],
