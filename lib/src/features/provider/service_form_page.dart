@@ -467,6 +467,8 @@ class _AddZoneSheetState extends State<_AddZoneSheet> {
   double _radiusKm = 30;
   bool _loading = false;
   String? _error;
+  List<PlaceSuggestion> _suggestions = [];
+  PlaceSuggestion? _selected;
 
   @override
   void dispose() {
@@ -474,10 +476,31 @@ class _AddZoneSheetState extends State<_AddZoneSheet> {
     super.dispose();
   }
 
+  Future<void> _onSearchChanged(String input) async {
+    if (input.trim().length < 2) {
+      setState(() => _suggestions = []);
+      return;
+    }
+    try {
+      final results = await widget.geocoding.autocomplete(input);
+      if (mounted) setState(() => _suggestions = results);
+    } catch (_) {
+      // Silently ignore — suggestions are not critical
+    }
+  }
+
+  void _selectSuggestion(PlaceSuggestion suggestion) {
+    _selected = suggestion;
+    _addressController.text = suggestion.description;
+    setState(() {
+      _suggestions = [];
+      _error = null;
+    });
+  }
+
   Future<void> _validate() async {
-    final address = _addressController.text.trim();
-    if (address.isEmpty) {
-      setState(() => _error = 'Saisissez une adresse ou une ville');
+    if (_selected == null) {
+      setState(() => _error = 'Sélectionnez une adresse dans les suggestions');
       return;
     }
 
@@ -487,19 +510,19 @@ class _AddZoneSheetState extends State<_AddZoneSheet> {
     });
 
     try {
-      final result = await widget.geocoding.geocode(address);
+      final result = await widget.geocoding.getPlaceLatLng(_selected!.placeId);
       if (!mounted) return;
 
       if (result == null) {
         setState(() {
           _loading = false;
-          _error = 'Adresse introuvable. Vérifiez et réessayez.';
+          _error = 'Impossible de localiser cette adresse.';
         });
         return;
       }
 
       Navigator.of(context).pop(ServiceZone(
-        label: address,
+        label: _selected!.description,
         latitude: result.lat,
         longitude: result.lng,
         radiusKm: _radiusKm.round(),
@@ -547,19 +570,72 @@ class _AddZoneSheetState extends State<_AddZoneSheet> {
           ),
           const SizedBox(height: 16),
 
-          // Address field
+          // Address field with autocomplete
           TextFormField(
             controller: _addressController,
             autofocus: true,
             textCapitalization: TextCapitalization.words,
             decoration: InputDecoration(
-              hintText: 'Adresse ou ville',
-              prefixIcon:
-                  const Icon(Icons.search_rounded, size: 20),
+              hintText: 'Ville ou adresse',
+              prefixIcon: const Icon(Icons.search_rounded, size: 20),
               errorText: _error,
             ),
-            onFieldSubmitted: (_) => _validate(),
+            onChanged: (v) {
+              _selected = null;
+              _onSearchChanged(v);
+            },
           ),
+
+          // Suggestions list
+          if (_suggestions.isNotEmpty)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 180),
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: oc.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: oc.border),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: _suggestions.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  color: oc.border.withValues(alpha: 0.5),
+                ),
+                itemBuilder: (_, i) {
+                  final s = _suggestions[i];
+                  return InkWell(
+                    onTap: () => _selectSuggestion(s),
+                    borderRadius: BorderRadius.circular(
+                      i == 0 || i == _suggestions.length - 1 ? 12 : 0,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.location_on_outlined,
+                              size: 16, color: oc.secondaryText),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              s.description,
+                              style: Theme.of(context).textTheme.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           const SizedBox(height: 20),
 
           // Radius slider
