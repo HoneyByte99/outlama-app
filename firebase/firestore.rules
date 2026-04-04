@@ -5,6 +5,8 @@ service cloud.firestore {
     // ---------- Helpers ----------
     function signedIn() { return request.auth != null; }
     function isAdmin() { return signedIn() && request.auth.token.admin == true; }
+    function isModerator() { return signedIn() && request.auth.token.moderator == true; }
+    function isAdminOrModerator() { return isAdmin() || isModerator(); }
     function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
 
     function bookingRef(bookingId) {
@@ -189,9 +191,22 @@ service cloud.firestore {
 
     // ---------- REPORTS (any signed-in user can create) ----------
     match /reports/{reportId} {
-      allow read: if isAdmin();
+      allow read: if isAdminOrModerator();
       allow create: if signedIn();
-      allow update, delete: if isAdmin();
+      allow update: if isAdminOrModerator();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- USER ROLES (admin visibility on privileged accounts) ----------
+    match /user_roles/{uid} {
+      allow read: if isAdmin();
+      allow write: if false; // written exclusively by Cloud Functions (Admin SDK)
+    }
+
+    // ---------- ADMIN LOGS (audit trail, admin-only) ----------
+    match /admin_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // written exclusively by Cloud Functions (Admin SDK)
     }
 
     // ---------- NOTIFICATIONS (private to owner) ----------
