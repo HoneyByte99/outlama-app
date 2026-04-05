@@ -234,6 +234,13 @@ service cloud.firestore {
       }
     }
 
+    // Collection group rule required for collectionGroup('events') queries.
+    // Without this, Firestore rejects the query even if the nested rule exists.
+    match /{path=**}/events/{eventId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // ---------- Default deny ----------
     match /{document=**} {
       allow read, write: if false;
