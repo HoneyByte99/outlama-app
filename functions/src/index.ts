@@ -841,6 +841,31 @@ export const deleteMessage = onCall(async (request) => {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
+// revokeUserSessions — admin only
+// Forces token refresh on all sessions for the target user.
+// ---------------------------------------------------------------------------
+
+export const revokeUserSessions = onCall(async (request) => {
+  const callerUid = request.auth?.uid;
+  assertAuthenticated(callerUid);
+  assertAdminClaim(request.auth?.token?.admin);
+
+  const targetUid = requireString(request.data?.uid, 'uid');
+
+  // Revoke all refresh tokens — forces re-authentication on all devices.
+  await admin.auth().revokeRefreshTokens(targetUid);
+
+  await writeAdminLog({
+    actorUid: callerUid,
+    action: 'revoke_sessions',
+    targetType: 'user',
+    targetId: targetUid,
+  });
+
+  return { uid: targetUid, revoked: true };
+});
+
+// ---------------------------------------------------------------------------
 // logSession — called by the mobile app on every sign-in
 // ---------------------------------------------------------------------------
 
