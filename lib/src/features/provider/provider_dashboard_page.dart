@@ -133,72 +133,74 @@ class _OnboardingBanner extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              oc.success.withValues(alpha: 0.12),
-              oc.success.withValues(alpha: 0.04),
-            ],
-          ),
+          color: oc.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: oc.success.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: oc.border),
+          boxShadow: [
+            BoxShadow(
+              color: oc.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: oc.success.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.rocket_launch_outlined,
-                color: oc.success,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Activez votre profil',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: oc.success,
-                          fontWeight: FontWeight.w600,
-                        ),
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: oc.warning.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Quelques infos pour commencer à recevoir des demandes.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: oc.secondaryText,
-                        ),
+                  child: Icon(
+                    Icons.lock_open_rounded,
+                    color: oc.warning,
+                    size: 24,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Activez votre profil',
+                        style:
+                            Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  color: oc.primaryText,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Quelques infos pour commencer à recevoir des demandes.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: oc.secondaryText,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () =>
                   GoRouter.of(context).push(AppRoutes.providerOnboarding),
               style: ElevatedButton.styleFrom(
-                backgroundColor: oc.success,
+                backgroundColor: oc.primary,
                 foregroundColor: Colors.white,
-                minimumSize: Size.zero,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
+                minimumSize: const Size(double.infinity, 48),
                 textStyle: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              child: const Text('Activer'),
+              child: const Text('Commencer'),
             ),
           ],
         ),
