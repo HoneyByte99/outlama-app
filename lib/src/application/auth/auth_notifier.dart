@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/auth/phone_otp_service.dart';
 import '../../domain/enums/active_mode.dart';
 import '../../domain/models/app_user.dart';
 import 'auth_providers.dart';
@@ -69,51 +70,30 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   /// Step 1 of phone auth — sends SMS OTP.
   /// On success, transitions to [AuthPhoneVerification].
-  /// Throws a [String] error message on failure.
+  /// On Android auto-verification, stays silent (auth state updates automatically).
+  /// Throws on failure.
   Future<void> sendPhoneOtp(String phoneE164) async {
-    final auth = ref.read(firebaseAuthProvider);
-    String? errorMessage;
-
-    final completer = Completer<void>();
-
-    await auth.verifyPhoneNumber(
-      phoneNumber: phoneE164,
-      timeout: const Duration(seconds: 60),
-      verificationCompleted: (credential) async {
-        // Auto-retrieval on Android — sign in immediately without OTP screen.
-        try {
-          await auth.signInWithCredential(credential);
-        } catch (_) {}
-        if (!completer.isCompleted) completer.complete();
-      },
-      verificationFailed: (e) {
-        errorMessage = e.message ?? e.code;
-        if (!completer.isCompleted) completer.complete();
-      },
-      codeSent: (verificationId, _) {
-        state = AsyncData(AuthPhoneVerification(
-          verificationId: verificationId,
-          phoneNumber: phoneE164,
-        ));
-        if (!completer.isCompleted) completer.complete();
-      },
-      codeAutoRetrievalTimeout: (_) {
-        if (!completer.isCompleted) completer.complete();
-      },
+    final token = await platformSendOtp(
+      ref.read(firebaseAuthProvider),
+      phoneE164,
     );
-
-    await completer.future;
-    if (errorMessage != null) throw errorMessage!;
+    // null → Android auto-verified; authStateChanges handles the rest.
+    if (token != null) {
+      state = AsyncData(AuthPhoneVerification(
+        verificationId: token,
+        phoneNumber: phoneE164,
+      ));
+    }
   }
 
   /// Step 2 of phone auth — verifies the OTP entered by the user.
   /// On success, [authStateChanges] fires and [_resolveState] runs.
   Future<void> verifyPhoneOtp(String verificationId, String smsCode) async {
-    final credential = PhoneAuthProvider.credential(
-      verificationId: verificationId,
-      smsCode: smsCode,
+    await platformVerifyOtp(
+      ref.read(firebaseAuthProvider),
+      verificationId,
+      smsCode,
     );
-    await ref.read(firebaseAuthProvider).signInWithCredential(credential);
   }
 
   /// Switches the active mode for the current user.
