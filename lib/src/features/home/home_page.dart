@@ -745,12 +745,12 @@ class _ServiceCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: oc.cardSurface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: oc.border.withValues(alpha: 0.5)),
+          border: Border.all(color: oc.border),
           boxShadow: [
             BoxShadow(
-              color: oc.shadow,
-              blurRadius: 12,
-              spreadRadius: 0,
+              color: const Color(0x1A1B3A4B),
+              blurRadius: 16,
+              spreadRadius: 1,
               offset: const Offset(0, 4),
             ),
           ],

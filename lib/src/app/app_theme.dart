@@ -35,7 +35,7 @@ abstract final class AppColors {
   static const warning = Color(0xFFE8900A);
   static const error = Color(0xFFE03D3A);
   static const icons = Color(0xFF8AAAB8);
-  static const shadow = Color(0x0D1B3A4B);
+  static const shadow = Color(0x1F1B3A4B);
 }
 
 // ---------------------------------------------------------------------------
@@ -105,7 +105,7 @@ class OutalmaColors extends ThemeExtension<OutalmaColors> {
     warning: Color(0xFFE8900A),
     error: Color(0xFFE03D3A),
     icons: Color(0xFF8AAAB8),
-    shadow: Color(0x0D1B3A4B),
+    shadow: Color(0x1F1B3A4B),
   );
 
   /// Dark palette — mint inverts with navy.
@@ -316,7 +316,7 @@ abstract final class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: AppColors.cardSurface,
-        elevation: 2,
+        elevation: 4,
         shadowColor: AppColors.shadow,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
