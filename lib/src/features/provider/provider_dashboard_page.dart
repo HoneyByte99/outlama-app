@@ -6,6 +6,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../app/app_shell.dart';
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
+import '../../application/auth/auth_providers.dart';
 import '../../application/provider/provider_providers.dart';
 import '../../application/user/user_providers.dart';
 import '../../domain/enums/active_mode.dart';
@@ -38,10 +39,7 @@ class ProviderDashboardPage extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             actions: [
-              _ModeBadge(
-                activeMode: activeMode,
-                onTap: () => context.go(AppRoutes.profile),
-              ),
+              _ModeBadge(activeMode: activeMode),
               IconButton(
                 icon: const Icon(Icons.person_outline),
                 onPressed: () => context.push(AppRoutes.providerOnboarding),
@@ -515,14 +513,13 @@ class _ErrorState extends StatelessWidget {
 // Mode badge — AppBar shortcut to profile/switch tab
 // ---------------------------------------------------------------------------
 
-class _ModeBadge extends StatelessWidget {
-  const _ModeBadge({required this.activeMode, required this.onTap});
+class _ModeBadge extends ConsumerWidget {
+  const _ModeBadge({required this.activeMode});
 
   final ActiveMode activeMode;
-  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final oc = context.oc;
     final isClient = activeMode == ActiveMode.client;
@@ -530,7 +527,17 @@ class _ModeBadge extends StatelessWidget {
     final color = isClient ? oc.primary : oc.success;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        final newMode = isClient ? ActiveMode.provider : ActiveMode.client;
+        ref.read(authNotifierProvider.notifier).switchMode(newMode);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(newMode == ActiveMode.client
+                ? l10n.modeClientActivated
+                : l10n.modeProviderActivated),
+          ),
+        );
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
