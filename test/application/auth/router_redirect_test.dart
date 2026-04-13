@@ -17,6 +17,7 @@ String? _redirect(AuthState authState, String location) {
 
   return switch (authState) {
     AuthLoading() => null,
+    AuthPhoneVerification() => null, // OTP flow — future use
     AuthUnauthenticated() => isAuthRoute ? null : AppRoutes.signIn,
     AuthAuthenticated() => isAuthRoute ? AppRoutes.home : null,
   };

@@ -6,8 +6,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
+import '../../application/auth/auth_providers.dart';
 import '../../application/theme/theme_provider.dart';
 import '../../../l10n/app_localizations.dart';
+import '../shared/phone_field.dart';
+
+// ---------------------------------------------------------------------------
+// Auth mode enum — shared between sign-in and sign-up
+// ---------------------------------------------------------------------------
+
+enum _AuthMode { mail, phone }
 
 class SignInPage extends ConsumerStatefulWidget {
   const SignInPage({super.key});
@@ -17,9 +25,16 @@ class SignInPage extends ConsumerStatefulWidget {
 }
 
 class _SignInPageState extends ConsumerState<SignInPage> {
+  _AuthMode _mode = _AuthMode.mail;
+
+  // Email fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+
+  // Phone fields
+  String? _phoneE164;
+
   bool _loading = false;
 
   @override
@@ -29,7 +44,11 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     super.dispose();
   }
 
-  Future<void> _signIn() async {
+  // ---------------------------------------------------------------------------
+  // Email sign-in
+  // ---------------------------------------------------------------------------
+
+  Future<void> _signInEmail() async {
     final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -39,9 +58,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       return;
     }
 
-    // Capture before async gap.
     final errorGeneral = l10n.errorGeneral;
-
     setState(() => _loading = true);
 
     try {
@@ -57,6 +74,45 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phone sign-in (no OTP for now — uses temp email auth under the hood)
+  // ---------------------------------------------------------------------------
+
+  Future<void> _signInPhone() async {
+    final l10n = AppLocalizations.of(context)!;
+    final phone = _phoneE164;
+
+    if (phone == null || phone.isEmpty) {
+      _showError(l10n.signInErrorEmptyFields);
+      return;
+    }
+
+    final phoneError = PhoneField.validate(phone);
+    if (phoneError != null) {
+      _showError(phoneError);
+      return;
+    }
+
+    final errorGeneral = l10n.errorGeneral;
+    setState(() => _loading = true);
+
+    try {
+      await ref.read(authNotifierProvider.notifier).signInWithPhone(
+            phoneE164: phone,
+          );
+    } on FirebaseAuthException catch (e) {
+      _showError(_mapFirebaseError(e.code));
+    } catch (_) {
+      _showError(errorGeneral);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
   void _showError(String message) {
     if (!mounted) return;
@@ -120,91 +176,75 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                       ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 28),
 
-                // ---- Fields ----
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  autocorrect: false,
-                  decoration: InputDecoration(
-                    hintText: l10n.signInEmailHint,
-                    prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                  ),
+                // ---- Mail / Phone toggle ----
+                _AuthModeToggle(
+                  mode: _mode,
+                  onChanged: (m) => setState(() => _mode = m),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _signIn(),
-                  decoration: InputDecoration(
-                    hintText: l10n.signInPasswordHint,
-                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: oc.icons,
-                        size: 20,
+                const SizedBox(height: 28),
+
+                // ---- Form ----
+                if (_mode == _AuthMode.mail) ...[
+                  // Email fields
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    decoration: InputDecoration(
+                      hintText: l10n.signInEmailHint,
+                      prefixIcon: const Icon(Icons.email_outlined, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _signInEmail(),
+                    decoration: InputDecoration(
+                      hintText: l10n.signInPasswordHint,
+                      prefixIcon:
+                          const Icon(Icons.lock_outline_rounded, size: 20),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: oc.icons,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
                       ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                ),
-                const SizedBox(height: 4),
+                  const SizedBox(height: 4),
 
-                // ---- Forgot password ----
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () async {
-                      final innerL10n = AppLocalizations.of(context)!;
-                      final email = _emailController.text.trim();
-                      if (email.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(innerL10n.signInForgotEnterEmail),
-                            backgroundColor: oc.error,
-                          ),
-                        );
-                        return;
-                      }
-                      try {
-                        await FirebaseAuth.instance
-                            .sendPasswordResetEmail(email: email);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(AppLocalizations.of(context)!
-                                  .signInForgotEmailSent),
+                  // Forgot password
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _forgotPassword,
+                      child: Text(
+                        l10n.signInForgotPassword,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: oc.primary,
                             ),
-                          );
-                        }
-                      } catch (_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(AppLocalizations.of(context)!
-                                  .signInForgotEmailError),
-                              backgroundColor: oc.error,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                    child: Text(
-                      l10n.signInForgotPassword,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: oc.primary,
-                          ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
+                ] else ...[
+                  // Phone field
+                  PhoneField(
+                    initialValue: _phoneE164,
+                    onChanged: (v) => setState(() => _phoneE164 = v),
+                  ),
+                  const SizedBox(height: 28),
+                ],
 
                 // ---- CTA ----
                 _loading
@@ -217,7 +257,9 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                     : SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _signIn,
+                          onPressed: _mode == _AuthMode.mail
+                              ? _signInEmail
+                              : _signInPhone,
                           child: Text(l10n.signInButton),
                         ),
                       ),
@@ -247,6 +289,128 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                 const SizedBox(height: 40),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _forgotPassword() async {
+    final l10n = AppLocalizations.of(context)!;
+    final oc = context.oc;
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.signInForgotEnterEmail),
+          backgroundColor: oc.error,
+        ),
+      );
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                AppLocalizations.of(context)!.signInForgotEmailSent),
+          ),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                AppLocalizations.of(context)!.signInForgotEmailError),
+            backgroundColor: oc.error,
+          ),
+        );
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mail / Phone toggle widget
+// ---------------------------------------------------------------------------
+
+class _AuthModeToggle extends StatelessWidget {
+  const _AuthModeToggle({required this.mode, required this.onChanged});
+
+  final _AuthMode mode;
+  final ValueChanged<_AuthMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final oc = context.oc;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: oc.inputFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: oc.border),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          _buildTab(
+            context,
+            icon: Icons.email_outlined,
+            label: 'Mail',
+            isActive: mode == _AuthMode.mail,
+            onTap: () => onChanged(_AuthMode.mail),
+          ),
+          _buildTab(
+            context,
+            icon: Icons.phone_outlined,
+            label: 'Phone',
+            isActive: mode == _AuthMode.phone,
+            onTap: () => onChanged(_AuthMode.phone),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    final oc = context.oc;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? oc.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isActive ? Colors.white : oc.secondaryText,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isActive ? Colors.white : oc.secondaryText,
+                    ),
+              ),
+            ],
           ),
         ),
       ),

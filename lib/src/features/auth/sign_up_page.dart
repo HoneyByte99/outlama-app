@@ -11,6 +11,12 @@ import '../../application/theme/theme_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../shared/phone_field.dart';
 
+// ---------------------------------------------------------------------------
+// Auth mode enum
+// ---------------------------------------------------------------------------
+
+enum _AuthMode { mail, phone }
+
 class SignUpPage extends ConsumerStatefulWidget {
   const SignUpPage({super.key});
 
@@ -19,11 +25,19 @@ class SignUpPage extends ConsumerStatefulWidget {
 }
 
 class _SignUpPageState extends ConsumerState<SignUpPage> {
+  _AuthMode _mode = _AuthMode.mail;
+
+  // Shared
   final _nameController = TextEditingController();
+
+  // Email fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  String? _phone; // E.164 from PhoneField
   bool _obscurePassword = true;
+
+  // Phone fields
+  String? _phoneE164;
+
   bool _loading = false;
 
   @override
@@ -34,7 +48,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     super.dispose();
   }
 
-  Future<void> _signUp() async {
+  // ---------------------------------------------------------------------------
+  // Email sign-up
+  // ---------------------------------------------------------------------------
+
+  Future<void> _signUpEmail() async {
     final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
@@ -49,9 +67,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
       return;
     }
 
-    // Capture before async gap.
     final errorGeneral = l10n.errorGeneral;
-
     setState(() => _loading = true);
 
     try {
@@ -65,7 +81,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
             uid: credential.user!.uid,
             displayName: name,
             email: email,
-            phoneE164: _phone,
           );
     } on FirebaseAuthException catch (e) {
       _showError(_mapFirebaseError(e.code));
@@ -75,6 +90,51 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phone sign-up (no OTP for now — uses temp email auth under the hood)
+  // ---------------------------------------------------------------------------
+
+  Future<void> _signUpPhone() async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = _nameController.text.trim();
+    final phone = _phoneE164;
+
+    if (name.isEmpty) {
+      _showError(l10n.signUpErrorEmptyFields);
+      return;
+    }
+    if (phone == null || phone.isEmpty) {
+      _showError(l10n.signUpErrorEmptyFields);
+      return;
+    }
+
+    final phoneError = PhoneField.validate(phone);
+    if (phoneError != null) {
+      _showError(phoneError);
+      return;
+    }
+
+    final errorGeneral = l10n.errorGeneral;
+    setState(() => _loading = true);
+
+    try {
+      await ref.read(authNotifierProvider.notifier).signUpWithPhone(
+            phoneE164: phone,
+            displayName: name,
+          );
+    } on FirebaseAuthException catch (e) {
+      _showError(_mapFirebaseError(e.code));
+    } catch (_) {
+      _showError(errorGeneral);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
   void _showError(String message) {
     if (!mounted) return;
@@ -137,56 +197,69 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
 
-                // ---- Fields ----
+                // ---- Mail / Phone toggle ----
+                _AuthModeToggle(
+                  mode: _mode,
+                  onChanged: (m) => setState(() => _mode = m),
+                ),
+                const SizedBox(height: 28),
+
+                // ---- Name (shared between both modes) ----
                 TextField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     hintText: l10n.signUpNameHint,
-                    prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
+                    prefixIcon:
+                        const Icon(Icons.person_outline_rounded, size: 20),
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  autocorrect: false,
-                  decoration: InputDecoration(
-                    hintText: l10n.signInEmailHint,
-                    prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                PhoneField(
-                  onChanged: (v) => _phone = v,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _signUp(),
-                  decoration: InputDecoration(
-                    hintText: l10n.signUpPasswordHint,
-                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: oc.icons,
-                        size: 20,
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
+
+                // ---- Mode-specific fields ----
+                if (_mode == _AuthMode.mail) ...[
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    decoration: InputDecoration(
+                      hintText: l10n.signInEmailHint,
+                      prefixIcon: const Icon(Icons.email_outlined, size: 20),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _signUpEmail(),
+                    decoration: InputDecoration(
+                      hintText: l10n.signUpPasswordHint,
+                      prefixIcon:
+                          const Icon(Icons.lock_outline_rounded, size: 20),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: oc.icons,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  PhoneField(
+                    initialValue: _phoneE164,
+                    onChanged: (v) => setState(() => _phoneE164 = v),
+                  ),
+                ],
                 const SizedBox(height: 28),
 
                 // ---- CTA ----
@@ -200,7 +273,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                     : SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _signUp,
+                          onPressed: _mode == _AuthMode.mail
+                              ? _signUpEmail
+                              : _signUpPhone,
                           child: Text(l10n.signUpButton),
                         ),
                       ),
@@ -230,6 +305,92 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                 const SizedBox(height: 40),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mail / Phone toggle widget
+// ---------------------------------------------------------------------------
+
+class _AuthModeToggle extends StatelessWidget {
+  const _AuthModeToggle({required this.mode, required this.onChanged});
+
+  final _AuthMode mode;
+  final ValueChanged<_AuthMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final oc = context.oc;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: oc.inputFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: oc.border),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          _buildTab(
+            context,
+            icon: Icons.email_outlined,
+            label: 'Mail',
+            isActive: mode == _AuthMode.mail,
+            onTap: () => onChanged(_AuthMode.mail),
+          ),
+          _buildTab(
+            context,
+            icon: Icons.phone_outlined,
+            label: 'Phone',
+            isActive: mode == _AuthMode.phone,
+            onTap: () => onChanged(_AuthMode.phone),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    final oc = context.oc;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? oc.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isActive ? Colors.white : oc.secondaryText,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isActive ? Colors.white : oc.secondaryText,
+                    ),
+              ),
+            ],
           ),
         ),
       ),
