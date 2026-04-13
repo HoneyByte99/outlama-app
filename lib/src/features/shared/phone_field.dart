@@ -56,6 +56,9 @@ final _kDefaultCountry = _kCountries[0];
 // Pass initialValue as E.164 to pre-fill country + number.
 // ---------------------------------------------------------------------------
 
+/// Minimum number of local digits (excluding dial code) to consider valid.
+const _kMinLocalDigits = 7;
+
 class PhoneField extends StatefulWidget {
   const PhoneField({
     super.key,
@@ -70,6 +73,20 @@ class PhoneField extends StatefulWidget {
   final TextInputAction textInputAction;
   final VoidCallback? onSubmitted;
 
+  /// Returns `null` when [value] (E.164 string) is valid, or an error message.
+  static String? validate(String? value) {
+    if (value == null || value.isEmpty) return null; // optional field
+    final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
+    // E.164 total length: country code (1-3) + local (typically 7-12)
+    if (digitsOnly.length < _kMinLocalDigits) {
+      return 'Numéro trop court';
+    }
+    if (digitsOnly.length > 15) {
+      return 'Numéro trop long';
+    }
+    return null;
+  }
+
   @override
   State<PhoneField> createState() => _PhoneFieldState();
 }
@@ -77,6 +94,7 @@ class PhoneField extends StatefulWidget {
 class _PhoneFieldState extends State<PhoneField> {
   late _Country _country;
   late TextEditingController _ctrl;
+  String? _error;
 
   @override
   void initState() {
@@ -114,7 +132,10 @@ class _PhoneFieldState extends State<PhoneField> {
 
   void _notify() {
     final local = _ctrl.text.trim();
-    widget.onChanged(local.isEmpty ? null : '${_country.dialCode}$local');
+    final e164 = local.isEmpty ? null : '${_country.dialCode}$local';
+    final err = PhoneField.validate(e164);
+    setState(() => _error = err);
+    widget.onChanged(e164);
   }
 
   void _pickCountry() async {
@@ -134,11 +155,17 @@ class _PhoneFieldState extends State<PhoneField> {
   Widget build(BuildContext context) {
     final oc = context.oc;
 
-    return Container(
+    final hasError = _error != null && _ctrl.text.trim().isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+      Container(
       decoration: BoxDecoration(
         color: oc.inputFill,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: oc.border),
+        border: Border.all(color: hasError ? oc.error : oc.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -204,6 +231,18 @@ class _PhoneFieldState extends State<PhoneField> {
           ),
         ],
       ),
+    ),
+    if (hasError)
+      Padding(
+        padding: const EdgeInsets.only(top: 6, left: 4),
+        child: Text(
+          _error!,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: oc.error,
+              ),
+        ),
+      ),
+      ],
     );
   }
 }

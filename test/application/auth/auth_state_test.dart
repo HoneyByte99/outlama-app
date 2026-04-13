@@ -29,10 +29,6 @@ void main() {
         const AuthLoading(),
         const AuthUnauthenticated(),
         AuthAuthenticated(_testUser()),
-        const AuthPhoneVerification(
-          verificationId: 'vid',
-          phoneNumber: '+221701234567',
-        ),
       ];
 
       for (final s in states) {
@@ -40,7 +36,6 @@ void main() {
           AuthLoading() => 'loading',
           AuthUnauthenticated() => 'unauthenticated',
           AuthAuthenticated() => 'authenticated',
-          AuthPhoneVerification() => 'phone-verification',
         };
         expect(label, isNotEmpty);
       }

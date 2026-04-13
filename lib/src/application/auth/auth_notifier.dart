@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/auth/phone_otp_service.dart';
 import '../../domain/enums/active_mode.dart';
 import '../../domain/models/app_user.dart';
 import 'auth_providers.dart';
@@ -66,34 +65,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   Future<void> signOut() async {
     await ref.read(firebaseAuthProvider).signOut();
-  }
-
-  /// Step 1 of phone auth — sends SMS OTP.
-  /// On success, transitions to [AuthPhoneVerification].
-  /// On Android auto-verification, stays silent (auth state updates automatically).
-  /// Throws on failure.
-  Future<void> sendPhoneOtp(String phoneE164) async {
-    final token = await platformSendOtp(
-      ref.read(firebaseAuthProvider),
-      phoneE164,
-    );
-    // null → Android auto-verified; authStateChanges handles the rest.
-    if (token != null) {
-      state = AsyncData(AuthPhoneVerification(
-        verificationId: token,
-        phoneNumber: phoneE164,
-      ));
-    }
-  }
-
-  /// Step 2 of phone auth — verifies the OTP entered by the user.
-  /// On success, [authStateChanges] fires and [_resolveState] runs.
-  Future<void> verifyPhoneOtp(String verificationId, String smsCode) async {
-    await platformVerifyOtp(
-      ref.read(firebaseAuthProvider),
-      verificationId,
-      smsCode,
-    );
   }
 
   /// Switches the active mode for the current user.

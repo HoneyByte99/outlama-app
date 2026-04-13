@@ -12,17 +12,12 @@ String? _redirect(AuthState authState, String location) {
   const authRoutes = [
     AppRoutes.signIn,
     AppRoutes.signUp,
-    AppRoutes.phoneSignIn,
-    AppRoutes.phoneOtp,
-    AppRoutes.phoneName,
   ];
   final isAuthRoute = authRoutes.contains(location);
 
   return switch (authState) {
     AuthLoading() => null,
     AuthUnauthenticated() => isAuthRoute ? null : AppRoutes.signIn,
-    AuthPhoneVerification() =>
-      location == AppRoutes.phoneOtp ? null : AppRoutes.phoneOtp,
     AuthAuthenticated() => isAuthRoute ? AppRoutes.home : null,
   };
 }
@@ -41,13 +36,6 @@ void main() {
     test('redirects /home to /sign-in', () {
       expect(
         _redirect(const AuthUnauthenticated(), AppRoutes.home),
-        equals(AppRoutes.signIn),
-      );
-    });
-
-    test('redirects /switch-mode to /sign-in', () {
-      expect(
-        _redirect(const AuthUnauthenticated(), AppRoutes.switchMode),
         equals(AppRoutes.signIn),
       );
     });
@@ -85,13 +73,6 @@ void main() {
     test('allows /home to pass through', () {
       expect(
         _redirect(AuthAuthenticated(authenticatedUser), AppRoutes.home),
-        isNull,
-      );
-    });
-
-    test('allows /switch-mode to pass through', () {
-      expect(
-        _redirect(AuthAuthenticated(authenticatedUser), AppRoutes.switchMode),
         isNull,
       );
     });

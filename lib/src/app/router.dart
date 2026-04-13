@@ -7,9 +7,6 @@ import '../application/auth/auth_state.dart';
 import '../application/service/service_providers.dart';
 import '../application/user/user_providers.dart';
 import '../domain/enums/active_mode.dart';
-import '../features/auth/phone_display_name_page.dart';
-import '../features/auth/phone_otp_page.dart';
-import '../features/auth/phone_sign_in_page.dart';
 import '../features/auth/sign_in_page.dart';
 import '../features/auth/sign_up_page.dart';
 import '../features/booking/booking_detail_page.dart';
@@ -37,9 +34,6 @@ import 'app_shell.dart';
 abstract final class AppRoutes {
   static const signIn = '/sign-in';
   static const signUp = '/sign-up';
-  static const phoneSignIn = '/auth/phone';
-  static const phoneOtp = '/auth/phone-otp';
-  static const phoneName = '/auth/phone-name';
   static const home = '/home';
   static const switchMode = '/switch-mode';
   static const bookings = '/bookings';
@@ -99,15 +93,7 @@ class RouterNotifier extends ChangeNotifier {
       data: (authState) {
         final loc = state.matchedLocation;
         final isAuthRoute = loc == AppRoutes.signIn ||
-            loc == AppRoutes.signUp ||
-            loc == AppRoutes.phoneSignIn ||
-            loc == AppRoutes.phoneOtp ||
-            loc == AppRoutes.phoneName;
-
-        // ---- Phone OTP pending ----
-        if (authState is AuthPhoneVerification) {
-          return loc == AppRoutes.phoneOtp ? null : AppRoutes.phoneOtp;
-        }
+            loc == AppRoutes.signUp;
 
         // ---- Unauthenticated ----
         if (authState is AuthUnauthenticated) {
@@ -116,11 +102,6 @@ class RouterNotifier extends ChangeNotifier {
 
         // ---- Authenticated ----
         if (authState is AuthAuthenticated) {
-          // New phone user with no name yet — collect it before home.
-          if (authState.user.displayName.isEmpty) {
-            return loc == AppRoutes.phoneName ? null : AppRoutes.phoneName;
-          }
-
           if (isAuthRoute) return AppRoutes.home;
 
           // When switching modes, redirect to the right home tab.
@@ -185,22 +166,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'sign-up',
         builder: (_, __) => const SignUpPage(),
       ),
-      GoRoute(
-        path: AppRoutes.phoneSignIn,
-        name: 'phone-sign-in',
-        builder: (_, __) => const PhoneSignInPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.phoneOtp,
-        name: 'phone-otp',
-        builder: (_, __) => const PhoneOtpPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.phoneName,
-        name: 'phone-name',
-        builder: (_, __) => const PhoneDisplayNamePage(),
-      ),
-
       // ---- Provider onboarding (outside shell — full screen) ----
       GoRoute(
         path: AppRoutes.providerOnboarding,
