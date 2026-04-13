@@ -310,6 +310,19 @@ class _LocationSheetState extends ConsumerState<_LocationSheet> {
     setState(() => _geoLoading = true);
 
     try {
+      // Check if location services are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.locationServiceDisabled),
+            ),
+          );
+        }
+        return;
+      }
+
       // Check permissions
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -330,7 +343,7 @@ class _LocationSheetState extends ConsumerState<_LocationSheet> {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 10),
+          timeLimit: Duration(seconds: 15),
         ),
       );
 
@@ -354,7 +367,9 @@ class _LocationSheetState extends ConsumerState<_LocationSheet> {
         lng: position.longitude,
         radiusKm: _radiusKm,
       );
-    } catch (_) {
+    } catch (e) {
+      // ignore: avoid_print
+      print('[Location] GPS error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -209,6 +209,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get locationPermissionDenied => 'Accès à la localisation refusé';
 
   @override
+  String get locationServiceDisabled =>
+      'Activez la localisation dans les paramètres';
+
+  @override
   String get locationGeoError => 'Impossible d\'obtenir votre position';
 
   @override

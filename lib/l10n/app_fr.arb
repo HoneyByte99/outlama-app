@@ -70,6 +70,7 @@
   "locationValidate": "Valider",
   "locationUseMyPosition": "Utiliser ma position",
   "locationPermissionDenied": "Accès à la localisation refusé",
+  "locationServiceDisabled": "Activez la localisation dans les paramètres",
   "locationGeoError": "Impossible d'obtenir votre position",
   "locationSearchHint": "Ville ou adresse",
   "locationSaveTooltip": "Enregistrer cette adresse",

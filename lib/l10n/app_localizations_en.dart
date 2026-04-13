@@ -203,6 +203,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationPermissionDenied => 'Location permission denied';
 
   @override
+  String get locationServiceDisabled => 'Enable location services in settings';
+
+  @override
   String get locationGeoError => 'Could not get your location';
 
   @override

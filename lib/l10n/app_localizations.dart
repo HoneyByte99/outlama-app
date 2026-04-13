@@ -476,6 +476,12 @@ abstract class AppLocalizations {
   /// **'Location permission denied'**
   String get locationPermissionDenied;
 
+  /// No description provided for @locationServiceDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable location services in settings'**
+  String get locationServiceDisabled;
+
   /// No description provided for @locationGeoError.
   ///
   /// In en, this message translates to:
