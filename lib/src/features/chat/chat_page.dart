@@ -706,7 +706,7 @@ class _ImagePreviewBar extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + bottomPadding),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         border: Border(top: BorderSide(color: oc.border)),
       ),
       child: Column(
@@ -909,7 +909,7 @@ class _InputBarState extends State<_InputBar> {
     return Container(
       padding: EdgeInsets.fromLTRB(6, 8, 6, 8 + bottomPadding),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         border: Border(top: BorderSide(color: oc.border)),
       ),
       child: Row(
@@ -969,7 +969,7 @@ class _InputBarState extends State<_InputBar> {
                 padding: const EdgeInsets.all(12),
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: oc.surface,
+                  color: oc.cardSurface,
                 ),
               ),
             )

@@ -134,7 +134,7 @@ class _OnboardingBanner extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: oc.surface,
+          color: oc.cardSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: oc.border),
           boxShadow: [
@@ -228,7 +228,7 @@ class _ProfileCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: oc.surface,
+          color: oc.cardSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: oc.border),
         ),
@@ -323,7 +323,7 @@ class _ServiceTile extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: oc.border),
       ),

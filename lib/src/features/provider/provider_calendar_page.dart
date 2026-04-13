@@ -441,7 +441,7 @@ class _UpcomingBookingTile extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: oc.surface,
+          color: oc.cardSurface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: oc.border),
         ),
@@ -530,7 +530,7 @@ class _BookingTile extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: oc.surface,
+          color: oc.cardSurface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: oc.border),
         ),

@@ -26,6 +26,9 @@ abstract final class AppColors {
   static const border = Color(0xFFCDD8DE);
   static const inputFill = Color(0xFFF4F7F9);
 
+  // Card surface — slightly tinted in light mode for contrast against background
+  static const cardSurface = Color(0xFFEFF3F6);
+
   // Semantic
   static const success = Color(0xFF00A678);
   static const successAccent = Color(0x1A00A678);
@@ -49,6 +52,7 @@ class OutalmaColors extends ThemeExtension<OutalmaColors> {
     required this.secondaryText,
     required this.background,
     required this.surface,
+    required this.cardSurface,
     required this.surfaceVariant,
     required this.border,
     required this.inputFill,
@@ -68,6 +72,10 @@ class OutalmaColors extends ThemeExtension<OutalmaColors> {
   final Color secondaryText;
   final Color background;
   final Color surface;
+  /// Slightly tinted surface for cards/containers in light mode.
+  /// Use this instead of [surface] for card-like containers to ensure
+  /// they visually separate from the scaffold background.
+  final Color cardSurface;
   final Color surfaceVariant;
   final Color border;
   final Color inputFill;
@@ -88,6 +96,7 @@ class OutalmaColors extends ThemeExtension<OutalmaColors> {
     secondaryText: Color(0xFF5C7A8A),
     background: Color(0xFFF4F7F9),
     surface: Color(0xFFFFFFFF),
+    cardSurface: Color(0xFFEFF3F6),
     surfaceVariant: Color(0xFFEDF2F5),
     border: Color(0xFFCDD8DE),
     inputFill: Color(0xFFF4F7F9),
@@ -109,6 +118,7 @@ class OutalmaColors extends ThemeExtension<OutalmaColors> {
     secondaryText: Color(0xFF7AA3B5),
     background: Color(0xFF0A1A24),
     surface: Color(0xFF122230),
+    cardSurface: Color(0xFF162838),
     surfaceVariant: Color(0xFF1A3040),
     border: Color(0xFF2A4555),
     inputFill: Color(0xFF0F1E28),
@@ -130,6 +140,7 @@ class OutalmaColors extends ThemeExtension<OutalmaColors> {
     Color? secondaryText,
     Color? background,
     Color? surface,
+    Color? cardSurface,
     Color? surfaceVariant,
     Color? border,
     Color? inputFill,
@@ -149,6 +160,7 @@ class OutalmaColors extends ThemeExtension<OutalmaColors> {
       secondaryText: secondaryText ?? this.secondaryText,
       background: background ?? this.background,
       surface: surface ?? this.surface,
+      cardSurface: cardSurface ?? this.cardSurface,
       surfaceVariant: surfaceVariant ?? this.surfaceVariant,
       border: border ?? this.border,
       inputFill: inputFill ?? this.inputFill,
@@ -173,6 +185,7 @@ class OutalmaColors extends ThemeExtension<OutalmaColors> {
       secondaryText: Color.lerp(secondaryText, other.secondaryText, t)!,
       background: Color.lerp(background, other.background, t)!,
       surface: Color.lerp(surface, other.surface, t)!,
+      cardSurface: Color.lerp(cardSurface, other.cardSurface, t)!,
       surfaceVariant: Color.lerp(surfaceVariant, other.surfaceVariant, t)!,
       border: Color.lerp(border, other.border, t)!,
       inputFill: Color.lerp(inputFill, other.inputFill, t)!,
@@ -302,7 +315,7 @@ abstract final class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface,
+        color: AppColors.cardSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

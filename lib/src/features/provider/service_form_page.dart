@@ -339,7 +339,7 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: oc.surface,
+                  color: oc.cardSurface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: oc.border),
                 ),
@@ -464,7 +464,7 @@ class _ZoneChip extends StatelessWidget {
       child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: oc.border),
       ),
@@ -680,7 +680,7 @@ class _AddZoneSheetState extends State<_AddZoneSheet> {
               constraints: const BoxConstraints(maxHeight: 180),
               margin: const EdgeInsets.only(top: 4),
               decoration: BoxDecoration(
-                color: oc.surface,
+                color: oc.cardSurface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: oc.border),
               ),
@@ -887,7 +887,7 @@ class _Placeholder extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: oc.surface,
+          color: oc.cardSurface,
           border: Border.all(
             color: oc.border,
             width: 1.5,

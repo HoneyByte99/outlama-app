@@ -138,7 +138,7 @@ class _ProfileHeader extends ConsumerWidget {
         : reviews.map((r) => r.rating).reduce((a, b) => a + b) / reviews.length;
 
     return Container(
-      color: oc.surface,
+      color: oc.cardSurface,
       padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -214,7 +214,7 @@ class _ReviewTile extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: oc.border),
       ),
@@ -281,7 +281,7 @@ class _PublicServiceTile extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: oc.surface,
+          color: oc.cardSurface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: oc.border),
         ),

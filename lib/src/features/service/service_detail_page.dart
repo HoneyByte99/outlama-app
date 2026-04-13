@@ -243,7 +243,7 @@ class _ProviderRow extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: oc.surface,
+          color: oc.cardSurface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: oc.border),
         ),
@@ -363,7 +363,7 @@ class _BookingBottomBar extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomPadding),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         border: Border(top: BorderSide(color: oc.border)),
       ),
       child: ElevatedButton(
@@ -404,7 +404,7 @@ class _EditBottomBar extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomPadding),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         border: Border(top: BorderSide(color: oc.border)),
       ),
       child: ElevatedButton.icon(

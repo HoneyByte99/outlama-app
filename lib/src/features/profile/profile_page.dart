@@ -142,7 +142,7 @@ class _EditableUserHeaderState extends ConsumerState<_EditableUserHeader> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: oc.border),
       ),
@@ -318,7 +318,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: oc.border),
       ),
@@ -726,7 +726,7 @@ class _ThemeSelector extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: oc.border),
       ),
@@ -807,7 +807,7 @@ class _AccountSection extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: oc.border),
       ),
@@ -943,7 +943,7 @@ class _MyReviewsSection extends ConsumerWidget {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: oc.surface,
+              color: oc.cardSurface,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: oc.border),
             ),
@@ -973,7 +973,7 @@ class _MyReviewsSection extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: oc.surface,
+                color: oc.cardSurface,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: oc.border),
               ),
@@ -1040,7 +1040,7 @@ class _ReviewTile extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: oc.border),
       ),
@@ -1124,7 +1124,7 @@ class _LanguageSelector extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: oc.border),
       ),

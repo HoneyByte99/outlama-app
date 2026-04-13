@@ -330,7 +330,7 @@ class _BookingCard extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: oc.surface,
+          color: oc.cardSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: oc.border),
           boxShadow: [

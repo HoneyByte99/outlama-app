@@ -201,7 +201,7 @@ class _ReviewFormState extends ConsumerState<_ReviewForm> {
                       width: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: oc.surface,
+                        color: oc.cardSurface,
                       ),
                     )
                   : Text(l10n.reviewSubmit),

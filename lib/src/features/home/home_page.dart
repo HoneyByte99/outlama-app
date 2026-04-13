@@ -391,7 +391,7 @@ class _LocationSheetState extends ConsumerState<_LocationSheet> {
                 constraints: const BoxConstraints(maxHeight: 160),
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: oc.surface,
+                  color: oc.cardSurface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: oc.border),
                 ),
@@ -538,7 +538,7 @@ class _SavedLocationTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: oc.surface,
+          color: oc.cardSurface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: oc.border),
         ),

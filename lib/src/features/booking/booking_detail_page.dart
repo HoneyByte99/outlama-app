@@ -243,7 +243,7 @@ class _ContactSection extends ConsumerWidget {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: oc.surface,
+            color: oc.cardSurface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: oc.border),
           ),
@@ -639,7 +639,7 @@ class _Section extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: oc.border),
       ),
@@ -793,7 +793,7 @@ class _ProviderActionBarState extends ConsumerState<_ProviderActionBar> {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomPadding),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         border: Border(top: BorderSide(color: oc.border)),
       ),
       child: Row(
@@ -827,7 +827,7 @@ class _ProviderActionBarState extends ConsumerState<_ProviderActionBar> {
                       width: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: oc.surface,
+                        color: oc.cardSurface,
                       ),
                     )
                   : Text(l10n.bookingAccept),
@@ -897,7 +897,7 @@ class _MarkInProgressBarState extends ConsumerState<_MarkInProgressBar> {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomPadding),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         border: Border(top: BorderSide(color: oc.border)),
       ),
       child: ElevatedButton(
@@ -908,7 +908,7 @@ class _MarkInProgressBarState extends ConsumerState<_MarkInProgressBar> {
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: oc.surface,
+                  color: oc.cardSurface,
                 ),
               )
             : Text(l10n.bookingStartService),
@@ -1092,7 +1092,7 @@ class _ConfirmDoneBarState extends ConsumerState<_ConfirmDoneBar> {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomPadding),
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         border: Border(top: BorderSide(color: oc.border)),
       ),
       child: ElevatedButton(
@@ -1106,7 +1106,7 @@ class _ConfirmDoneBarState extends ConsumerState<_ConfirmDoneBar> {
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: oc.surface,
+                  color: oc.cardSurface,
                 ),
               )
             : Text(l10n.bookingConfirmDoneButton),

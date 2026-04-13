@@ -173,7 +173,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                       width: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: oc.surface,
+                        color: oc.cardSurface,
                       ),
                     )
                   : Text(l10n.reportSubmit),

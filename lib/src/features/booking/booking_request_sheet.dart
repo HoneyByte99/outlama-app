@@ -222,7 +222,7 @@ class _BookingRequestSheetState extends ConsumerState<BookingRequestSheet> {
 
     return Container(
       decoration: BoxDecoration(
-        color: oc.surface,
+        color: oc.cardSurface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -311,7 +311,7 @@ class _BookingRequestSheetState extends ConsumerState<BookingRequestSheet> {
                                     width: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: oc.surface,
+                                      color: oc.cardSurface,
                                     ),
                                   )
                                 : Text(l10n.bookingSend),
@@ -638,7 +638,7 @@ class _StepAddressState extends ConsumerState<_StepAddress> {
           Container(
             constraints: const BoxConstraints(maxHeight: 150),
             decoration: BoxDecoration(
-              color: oc.surface,
+              color: oc.cardSurface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: oc.border),
             ),
