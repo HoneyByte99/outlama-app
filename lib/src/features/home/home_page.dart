@@ -960,22 +960,20 @@ class _ServiceCard extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        priceLabel,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(
-                              color: oc.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(child: _RatingRow(reviews: reviews)),
-                    ],
+                  Text(
+                    priceLabel,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(
+                          color: oc.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
+                  _RatingRow(reviews: reviews),
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -1037,38 +1035,41 @@ class _RatingRow extends StatelessWidget {
     if (reviews.isEmpty) {
       return Row(
         children: [
-          Icon(Icons.star_outline_rounded, size: 14, color: oc.icons),
+          Icon(Icons.star_outline_rounded, size: 12, color: oc.icons),
           const SizedBox(width: 3),
-          Text(
-            'Nouveau',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: oc.secondaryText,
-                  fontStyle: FontStyle.italic,
-                ),
+          Flexible(
+            child: Text(
+              'Nouveau',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: oc.secondaryText,
+                    fontStyle: FontStyle.italic,
+                    fontSize: 11,
+                  ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       );
     }
 
     final avg = reviews.fold<int>(0, (s, r) => s + r.rating) / reviews.length;
-    final fullStars = avg.floor();
-    final hasHalf = (avg - fullStars) >= 0.5;
 
     return Row(
       children: [
-        for (int i = 0; i < fullStars; i++)
-          const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFBBF24)),
-        if (hasHalf)
-          const Icon(Icons.star_half_rounded, size: 14, color: Color(0xFFFBBF24)),
-        for (int i = 0; i < 5 - fullStars - (hasHalf ? 1 : 0); i++)
-          Icon(Icons.star_outline_rounded, size: 14, color: oc.icons),
-        const SizedBox(width: 4),
-        Text(
-          '${avg.toStringAsFixed(1)} (${reviews.length})',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: oc.secondaryText,
-                fontWeight: FontWeight.w500,
-              ),
+        const Icon(Icons.star_rounded, size: 12, color: Color(0xFFFBBF24)),
+        const SizedBox(width: 2),
+        Flexible(
+          child: Text(
+            '${avg.toStringAsFixed(1)} (${reviews.length})',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: oc.secondaryText,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11,
+                ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
