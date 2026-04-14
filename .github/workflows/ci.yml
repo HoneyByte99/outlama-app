@@ -28,7 +28,7 @@ jobs:
         run: flutter analyze --fatal-warnings
 
       - name: Test
-        run: flutter test --coverage
+        run: flutter test --coverage --reporter expanded
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
