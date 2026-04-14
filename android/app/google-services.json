@@ -23,44 +23,6 @@
           "other_platform_oauth_client": []
         }
       }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:623675424162:android:bfcdc0f6b6b4d083c506fb",
-        "android_client_info": {
-          "package_name": "com.mycompany.outalmaservice"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAJoSegWh2DoALcQ6v8AU5C8smkhgcnnAA"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:623675424162:android:283ec4e2ada9e97dc506fb",
-        "android_client_info": {
-          "package_name": "com.outalma.app"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAJoSegWh2DoALcQ6v8AU5C8smkhgcnnAA"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
     }
   ],
   "configuration_version": "1"

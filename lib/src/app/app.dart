@@ -12,14 +12,14 @@ import 'app_theme.dart';
 import 'connectivity_banner.dart';
 import 'router.dart';
 
-class OutlamaApp extends ConsumerStatefulWidget {
-  const OutlamaApp({super.key});
+class OutalmaServiceApp extends ConsumerStatefulWidget {
+  const OutalmaServiceApp({super.key});
 
   @override
-  ConsumerState<OutlamaApp> createState() => _OutlamaAppState();
+  ConsumerState<OutalmaServiceApp> createState() => _OutalmaServiceAppState();
 }
 
-class _OutlamaAppState extends ConsumerState<OutlamaApp> {
+class _OutalmaServiceAppState extends ConsumerState<OutalmaServiceApp> {
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   StreamSubscription<RemoteMessage>? _messageSub;
 
@@ -42,7 +42,7 @@ class _OutlamaAppState extends ConsumerState<OutlamaApp> {
     final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
-      title: 'Outalma',
+      title: 'Outalma Service',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,

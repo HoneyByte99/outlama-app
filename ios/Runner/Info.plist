@@ -7,7 +7,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Outlama App</string>
+		<string>Outalma Service</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>outalma_app</string>
+		<string>Outalma Service</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -56,8 +56,6 @@
 		<key>UISupportedInterfaceOrientations</key>
 		<array>
 			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>UISupportedInterfaceOrientations~ipad</key>
 		<array>
@@ -69,10 +67,12 @@
 		<key>UIStatusBarHidden</key>
 		<false/>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>Utilisé pour choisir votre photo de profil.</string>
+		<string>Outalma Service utilise votre galerie pour choisir des photos.</string>
 		<key>NSCameraUsageDescription</key>
-		<string>Utilisé pour prendre une photo de profil.</string>
+		<string>Outalma Service utilise la caméra pour prendre des photos.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Outalma Service utilise le micro pour les messages vocaux.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>Utilisé pour afficher les services près de vous.</string>
+		<string>Outalma Service utilise votre position pour afficher les services près de vous.</string>
 	</dict>
 </plist>

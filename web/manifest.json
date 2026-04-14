@@ -1,11 +1,11 @@
 {
-    "name": "outalma_app",
-    "short_name": "outalma_app",
+    "name": "Outalma Service",
+    "short_name": "Outalma",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#1B3A4B",
-    "description": "A new Flutter project.",
+    "description": "Outalma Service — marketplace de services",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
