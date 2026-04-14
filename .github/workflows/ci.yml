@@ -17,9 +17,14 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.32.0"
+          # Pinned to match the local dev environment (Dart 3.11.3).
+          # pubspec.yaml requires sdk: ^3.11.3 — update this when upgrading Flutter.
+          flutter-version: "3.41.5"
           channel: stable
           cache: true
+
+      - name: Print Flutter version
+        run: flutter --version
 
       - name: Install dependencies
         run: flutter pub get
