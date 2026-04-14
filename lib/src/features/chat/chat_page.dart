@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../shared/network_image.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -496,6 +498,7 @@ class _MessageBubble extends ConsumerWidget {
                     width: 220,
                     height: 180,
                     fit: BoxFit.cover,
+                    headers: const {'Accept': '*/*'},
                     loadingBuilder: (_, child, progress) {
                       if (progress == null) return child;
                       return SizedBox(
@@ -564,7 +567,7 @@ class _MessageBubble extends ConsumerWidget {
         child: GestureDetector(
           onTap: () => Navigator.of(context).pop(),
           child: InteractiveViewer(
-            child: Image.network(url, fit: BoxFit.contain),
+            child: AppNetworkImage(url: url, fit: BoxFit.contain),
           ),
         ),
       ),
@@ -723,6 +726,7 @@ class _ImagePreviewBar extends StatelessWidget {
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
+                  headers: const {'Accept': '*/*'},
                   errorBuilder: (_, __, ___) => Container(
                     width: 64,
                     height: 64,

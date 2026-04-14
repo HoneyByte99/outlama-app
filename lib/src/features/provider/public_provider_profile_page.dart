@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../shared/network_image.dart';
 import '../../app/app_theme.dart';
 import '../../app/router.dart';
 import '../../application/provider/provider_providers.dart';
@@ -293,8 +294,11 @@ class _PublicServiceTile extends StatelessWidget {
                 width: 80,
                 height: 80,
                 child: service.photos.isNotEmpty
-                    ? Image.network(service.photos.first, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _iconFallback(oc))
+                    ? AppNetworkImage(
+                        url: service.photos.first,
+                        fit: BoxFit.cover,
+                        errorWidget: _iconFallback(oc),
+                      )
                     : _iconFallback(oc),
               ),
             ),

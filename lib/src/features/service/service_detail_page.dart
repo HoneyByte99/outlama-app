@@ -13,6 +13,7 @@ import '../../domain/enums/category_id.dart';
 import '../../domain/enums/price_type.dart';
 import '../../domain/models/service.dart';
 import '../booking/booking_request_sheet.dart';
+import '../shared/network_image.dart';
 import '../shared/user_avatar.dart';
 
 class ServiceDetailPage extends ConsumerWidget {
@@ -83,12 +84,11 @@ class _ServiceDetailContent extends ConsumerWidget {
             flexibleSpace: FlexibleSpaceBar(
               collapseMode: CollapseMode.none,
               background: service.photos.isNotEmpty
-                  ? Image.network(
-                      service.photos.first,
+                  ? AppNetworkImage(
+                      url: service.photos.first,
                       fit: BoxFit.cover,
                       width: double.infinity,
-                      alignment: Alignment.center,
-                      errorBuilder: (_, __, ___) => _heroFallback(oc),
+                      errorWidget: _heroFallback(oc),
                     )
                   : _heroFallback(oc),
             ),

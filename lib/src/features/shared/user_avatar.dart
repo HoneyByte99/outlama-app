@@ -56,6 +56,7 @@ class UserAvatar extends StatelessWidget {
           width: size,
           height: size,
           fit: BoxFit.cover,
+          headers: const {'Accept': '*/*'},
           errorBuilder: (_, error, __) {
           // ignore: avoid_print
           print('[UserAvatar] image load error for $photoPath — $error');

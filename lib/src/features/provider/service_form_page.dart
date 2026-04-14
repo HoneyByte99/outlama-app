@@ -831,6 +831,7 @@ class _PhotoSection extends StatelessWidget {
             Image.network(
               photos.first,
               fit: BoxFit.cover,
+              headers: const {'Accept': '*/*'},
               frameBuilder: (_, child, frame, loaded) {
                 if (loaded) return child;
                 return Stack(

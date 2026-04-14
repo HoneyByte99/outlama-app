@@ -22,6 +22,7 @@ import '../../domain/enums/category_id.dart';
 import '../../domain/models/review.dart';
 import '../../domain/models/service.dart';
 import '../shared/category_icon.dart';
+import '../shared/network_image.dart';
 import '../shared/user_avatar.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -895,12 +896,10 @@ class _ServiceCard extends ConsumerWidget {
                   fit: StackFit.expand,
                   children: [
                     service.photos.isNotEmpty
-                        ? Image.network(
-                            service.photos.first,
+                        ? AppNetworkImage(
+                            url: service.photos.first,
                             fit: BoxFit.cover,
-                            alignment: Alignment.center,
-                            errorBuilder: (_, __, ___) =>
-                                _iconPlaceholder(oc),
+                            errorWidget: _iconPlaceholder(oc),
                           )
                         : _iconPlaceholder(oc),
                     Positioned(
