@@ -34,4 +34,32 @@ enum BookingStatus {
         return BookingStatus.requested;
     }
   }
+
+  /// Returns `true` if transitioning from `this` to [to] is valid per the
+  /// Outalma MVP state machine:
+  ///
+  ///   requested   → accepted, rejected, cancelled
+  ///   accepted    → in_progress
+  ///   in_progress → done
+  ///   done / rejected / cancelled → (none)
+  ///
+  /// Note: server-side Cloud Functions are the authoritative enforcers.
+  /// This method is a client-side guard to prevent offering invalid actions
+  /// in the UI.
+  bool canTransitionTo(BookingStatus to) {
+    switch (this) {
+      case BookingStatus.requested:
+        return to == BookingStatus.accepted ||
+            to == BookingStatus.rejected ||
+            to == BookingStatus.cancelled;
+      case BookingStatus.accepted:
+        return to == BookingStatus.inProgress;
+      case BookingStatus.inProgress:
+        return to == BookingStatus.done;
+      case BookingStatus.done:
+      case BookingStatus.rejected:
+      case BookingStatus.cancelled:
+        return false;
+    }
+  }
 }
