@@ -809,6 +809,7 @@ class _AccountSection extends ConsumerWidget {
         onTap: () async {
           final oc = context.oc;
           final l10n = AppLocalizations.of(context)!;
+          final messenger = ScaffoldMessenger.of(context);
           final confirmed = await showDialog<bool>(
             context: context,
             builder: (ctx) => Dialog(
@@ -886,7 +887,16 @@ class _AccountSection extends ConsumerWidget {
             ),
           );
           if (confirmed == true) {
-            await ref.read(authNotifierProvider.notifier).signOut();
+            try {
+              await ref.read(authNotifierProvider.notifier).signOut();
+            } catch (_) {
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(l10n.errorGeneral),
+                  backgroundColor: oc.error,
+                ),
+              );
+            }
           }
         },
         child: Padding(
