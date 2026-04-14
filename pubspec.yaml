@@ -62,14 +62,14 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/images/logo_outalma.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#1B3A4B"
-  adaptive_icon_foreground: "assets/images/logo_outalma.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/logo_icon_cropped.png"
   remove_alpha_ios: true
-  background_color_ios: "#1B3A4B"
+  background_color_ios: "#FFFFFF"
   web:
     generate: true
     image_path: "assets/images/logo_outalma.png"
-    background_color: "#1B3A4B"
+    background_color: "#ffffff"
     theme_color: "#1B3A4B"
 
 flutter_native_splash:
