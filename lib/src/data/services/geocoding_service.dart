@@ -98,6 +98,11 @@ class GeocodingService {
   }
 }
 
+/// Injected at build time via `--dart-define=PLACES_API_KEY=<key>`.
+/// In development, set the variable in your IDE run configuration or pass it
+/// to `flutter run`. In CI, inject via the PLACES_API_KEY GitHub Secret.
+const _placesApiKey = String.fromEnvironment('PLACES_API_KEY');
+
 final geocodingServiceProvider = Provider<GeocodingService>((ref) {
-  return GeocodingService(apiKey: 'AIzaSyA8LD81VepWh8J31k6WqRH8FCJ85OLXBFA');
+  return GeocodingService(apiKey: _placesApiKey);
 });

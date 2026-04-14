@@ -45,8 +45,11 @@ jobs:
         run: flutter analyze --fatal-warnings
 
       # ── Test ──────────────────────────────────────────────────────────────
+      # PLACES_API_KEY is injected from GitHub Secrets so tests that exercise
+      # GeocodingService have a key available. Falls back to empty string when
+      # the secret is absent (forks / dependabot PRs).
       - name: Test
-        run: flutter test --coverage --reporter expanded
+        run: flutter test --coverage --reporter expanded --dart-define=PLACES_API_KEY=${{ secrets.PLACES_API_KEY }}
 
       # ── Coverage ──────────────────────────────────────────────────────────
       - name: Upload coverage to Codecov
